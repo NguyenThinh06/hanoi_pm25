@@ -1,0 +1,13 @@
+{
+  "grid_crs": "EPSG:3405",
+  "cell_size_m": 1000,
+  "total_cells": 8500,
+  "bounds_utm": [
+    520000,
+    2270000,
+    605000,
+    2370000
+  ],
+  "created_by": "ngthinh06",
+  "version": "1.0"
+}
