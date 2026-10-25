@@ -1,13 +1,44 @@
 {
   "grid_crs": "EPSG:3405",
   "cell_size_m": 1000,
-  "total_cells": 8500,
+  "total_cells": 3611,
+  "real_cells": 3610,
+  "canonical_cells": 3363,
+  "analysis_grid_rule": "intersects_boundary",
+  "analysis_grid_count": 3610,
+  "analysis_grid_filter": "grid_id != 'grid_unknown'",
+  "grid_unknown_id": "grid_unknown",
+  "boundary_touch_only_cells": 0,
+  "geometry_policy": "full_1000m_square; unknown_geometry=null",
+  "canonical_rule": "centroid.within(boundary_union); excludes boundary points",
+  "grid_origin_m": [
+    0,
+    0
+  ],
+  "candidate_padding_cells": 1,
+  "grid_id_rule": "grid_{lower_left_easting_integer}_{lower_left_northing_integer}",
+  "aligned_bounds_utm": [
+    528000.0,
+    2273000.0,
+    607000.0,
+    2367000.0
+  ],
+  "boundary_file": "data/reference/hanoi_boundary.geojson",
+  "boundary_sha256": "d8194abcc1d89eadd836941a750ae339f398a9b2e5e9d2428d0f96f1f2bd1f77",
+  "boundary_provenance_file": "data/reference/hanoi_boundary.provenance.json",
+  "date_start": "2021-01-01",
+  "date_end": "2025-12-31",
+  "date_id_format": "YYYYMMDD",
+  "date_unknown_id": -1,
+  "real_days": 1826,
+  "dim_date_rows": 1827,
+  "expected_grid_day_rows": 6591860,
   "bounds_utm": [
-    520000,
-    2270000,
-    605000,
-    2370000
+    529426.3461986005,
+    2274228.2279011,
+    605799.2588262123,
+    2365123.8437781734
   ],
   "created_by": "ngthinh06",
-  "version": "1.0"
+  "version": "2.0"
 }
