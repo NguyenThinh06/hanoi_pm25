@@ -98,6 +98,9 @@ def audit_and_map_stations(locations: list[dict[str, Any]]) -> None:
         pm25_sensor = next((s for s in sensors if s.get("parameter", {}).get("name") == "pm25"), None)
         pm25_sensor_id = pm25_sensor.get("id") if pm25_sensor else None
 
+        dt_first = (loc.get("datetimeFirst") or {}).get("utc")
+        dt_last = (loc.get("datetimeLast") or {}).get("utc")
+
         station_records.append({
             "station_id": f"openaq_{loc_id}",
             "source_id": loc_id,
@@ -111,7 +114,9 @@ def audit_and_map_stations(locations: list[dict[str, Any]]) -> None:
             "easting_m": round(easting_m, 2),
             "northing_m": round(northing_m, 2),
             "pm25_sensor_id": pm25_sensor_id,
-            "is_active": loc.get("datetimeLast") is not None
+            "datetime_first_utc": dt_first,
+            "datetime_last_utc": dt_last,
+            "is_active": dt_last is not None
         })
 
     # Lưu kết quả kiểm toán ra registry json

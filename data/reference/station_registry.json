@@ -12,6 +12,8 @@
     "easting_m": 582922.26,
     "northing_m": 2327776.43,
     "pm25_sensor_id": 37,
+    "datetime_first_utc": null,
+    "datetime_last_utc": null,
     "is_active": false
   },
   {
@@ -27,6 +29,8 @@
     "easting_m": 584911.52,
     "northing_m": 2324883.29,
     "pm25_sensor_id": 5049,
+    "datetime_first_utc": "2016-01-30T01:00:00Z",
+    "datetime_last_utc": "2016-11-09T16:00:00Z",
     "is_active": true
   },
   {
@@ -42,6 +46,8 @@
     "easting_m": 584891.05,
     "northing_m": 2324901.89,
     "pm25_sensor_id": 21632,
+    "datetime_first_utc": "2016-11-09T18:00:00Z",
+    "datetime_last_utc": "2025-04-09T15:00:00Z",
     "is_active": true
   },
   {
@@ -57,6 +63,8 @@
     "easting_m": 586483.26,
     "northing_m": 2325554.92,
     "pm25_sensor_id": 1742521,
+    "datetime_first_utc": null,
+    "datetime_last_utc": null,
     "is_active": false
   },
   {
@@ -72,6 +80,8 @@
     "easting_m": 582922.37,
     "northing_m": 2327754.3,
     "pm25_sensor_id": 6566240,
+    "datetime_first_utc": "2019-11-28T03:00:00Z",
+    "datetime_last_utc": "2020-06-23T14:00:00Z",
     "is_active": true
   },
   {
@@ -87,6 +97,8 @@
     "easting_m": 574435.39,
     "northing_m": 2322688.98,
     "pm25_sensor_id": 7772012,
+    "datetime_first_utc": "2024-01-29T06:00:00Z",
+    "datetime_last_utc": "2025-06-10T03:00:00Z",
     "is_active": true
   },
   {
@@ -102,6 +114,8 @@
     "easting_m": 579310.81,
     "northing_m": 2326851.12,
     "pm25_sensor_id": 7772023,
+    "datetime_first_utc": "2024-01-22T01:00:00Z",
+    "datetime_last_utc": "2024-12-11T14:00:00Z",
     "is_active": true
   },
   {
@@ -117,6 +131,8 @@
     "easting_m": 582930.06,
     "northing_m": 2324146.06,
     "pm25_sensor_id": 7772032,
+    "datetime_first_utc": "2024-01-29T16:00:00Z",
+    "datetime_last_utc": "2026-10-21T02:00:00Z",
     "is_active": true
   },
   {
@@ -132,6 +148,8 @@
     "easting_m": 573873.15,
     "northing_m": 2313566.4,
     "pm25_sensor_id": 7772046,
+    "datetime_first_utc": "2024-01-09T21:00:00Z",
+    "datetime_last_utc": "2025-02-05T08:00:00Z",
     "is_active": true
   },
   {
@@ -147,6 +165,8 @@
     "easting_m": 588710.91,
     "northing_m": 2325637.05,
     "pm25_sensor_id": 7772104,
+    "datetime_first_utc": "2024-01-29T06:00:00Z",
+    "datetime_last_utc": "2025-02-05T03:00:00Z",
     "is_active": true
   },
   {
@@ -162,6 +182,8 @@
     "easting_m": 589635.26,
     "northing_m": 2323815.72,
     "pm25_sensor_id": 7771992,
+    "datetime_first_utc": "2024-01-29T06:00:00Z",
+    "datetime_last_utc": "2024-01-30T08:00:00Z",
     "is_active": true
   },
   {
@@ -177,6 +199,8 @@
     "easting_m": 588426.19,
     "northing_m": 2326410.32,
     "pm25_sensor_id": 7772040,
+    "datetime_first_utc": "2024-01-15T07:00:00Z",
+    "datetime_last_utc": "2025-06-10T03:00:00Z",
     "is_active": true
   },
   {
@@ -192,6 +216,8 @@
     "easting_m": 585267.17,
     "northing_m": 2283582.09,
     "pm25_sensor_id": 7771980,
+    "datetime_first_utc": "2024-01-29T06:00:00Z",
+    "datetime_last_utc": "2024-10-02T18:00:00Z",
     "is_active": true
   },
   {
@@ -207,6 +233,8 @@
     "easting_m": 588282.72,
     "northing_m": 2326033.23,
     "pm25_sensor_id": 7772025,
+    "datetime_first_utc": "2024-01-29T06:00:00Z",
+    "datetime_last_utc": "2024-04-15T09:00:00Z",
     "is_active": true
   },
   {
@@ -222,6 +250,8 @@
     "easting_m": 587841.64,
     "northing_m": 2326905.29,
     "pm25_sensor_id": 7771996,
+    "datetime_first_utc": "2024-01-29T07:00:00Z",
+    "datetime_last_utc": "2024-11-26T18:00:00Z",
     "is_active": true
   },
   {
@@ -237,6 +267,8 @@
     "easting_m": 588286.09,
     "northing_m": 2325402.34,
     "pm25_sensor_id": 7771988,
+    "datetime_first_utc": "2024-01-29T06:00:00Z",
+    "datetime_last_utc": "2024-01-31T23:00:00Z",
     "is_active": true
   },
   {
@@ -252,6 +284,8 @@
     "easting_m": 584687.49,
     "northing_m": 2321908.07,
     "pm25_sensor_id": 7772073,
+    "datetime_first_utc": "2024-01-29T06:00:00Z",
+    "datetime_last_utc": "2024-12-11T15:00:00Z",
     "is_active": true
   },
   {
@@ -267,6 +301,8 @@
     "easting_m": 579448.52,
     "northing_m": 2306729.88,
     "pm25_sensor_id": 7771977,
+    "datetime_first_utc": "2024-01-29T06:00:00Z",
+    "datetime_last_utc": "2024-12-08T15:00:00Z",
     "is_active": true
   },
   {
@@ -282,6 +318,8 @@
     "easting_m": 586665.51,
     "northing_m": 2323301.84,
     "pm25_sensor_id": 7772038,
+    "datetime_first_utc": "2024-01-29T06:00:00Z",
+    "datetime_last_utc": "2024-03-22T06:00:00Z",
     "is_active": true
   },
   {
@@ -297,6 +335,8 @@
     "easting_m": 586349.51,
     "northing_m": 2326100.5,
     "pm25_sensor_id": 7772096,
+    "datetime_first_utc": "2024-01-29T06:00:00Z",
+    "datetime_last_utc": "2024-01-31T00:00:00Z",
     "is_active": true
   },
   {
@@ -312,6 +352,8 @@
     "easting_m": 559853.09,
     "northing_m": 2328562.22,
     "pm25_sensor_id": 7772053,
+    "datetime_first_utc": "2024-01-23T22:00:00Z",
+    "datetime_last_utc": "2025-02-05T06:00:00Z",
     "is_active": true
   },
   {
@@ -327,6 +369,8 @@
     "easting_m": 576687.11,
     "northing_m": 2327967.7,
     "pm25_sensor_id": 7772087,
+    "datetime_first_utc": "2024-01-29T16:00:00Z",
+    "datetime_last_utc": "2026-10-21T02:00:00Z",
     "is_active": true
   },
   {
@@ -342,6 +386,8 @@
     "easting_m": 580138.6,
     "northing_m": 2325427.3,
     "pm25_sensor_id": 7771998,
+    "datetime_first_utc": "2024-01-28T22:00:00Z",
+    "datetime_last_utc": "2024-01-30T04:00:00Z",
     "is_active": true
   },
   {
@@ -357,6 +403,8 @@
     "easting_m": 581050.93,
     "northing_m": 2327988.52,
     "pm25_sensor_id": 7772088,
+    "datetime_first_utc": "2024-01-22T07:00:00Z",
+    "datetime_last_utc": "2024-01-22T08:00:00Z",
     "is_active": true
   },
   {
@@ -372,6 +420,8 @@
     "easting_m": 588103.42,
     "northing_m": 2316745.85,
     "pm25_sensor_id": 7772016,
+    "datetime_first_utc": "2024-01-29T06:00:00Z",
+    "datetime_last_utc": "2025-02-05T04:00:00Z",
     "is_active": true
   },
   {
@@ -387,6 +437,8 @@
     "easting_m": 581519.59,
     "northing_m": 2298029.32,
     "pm25_sensor_id": 7772109,
+    "datetime_first_utc": "2024-01-29T06:00:00Z",
+    "datetime_last_utc": "2024-12-07T13:00:00Z",
     "is_active": true
   },
   {
@@ -402,6 +454,8 @@
     "easting_m": 567122.54,
     "northing_m": 2324240.45,
     "pm25_sensor_id": 7772076,
+    "datetime_first_utc": "2024-01-23T22:00:00Z",
+    "datetime_last_utc": "2025-02-05T08:00:00Z",
     "is_active": true
   },
   {
@@ -417,6 +471,8 @@
     "easting_m": 588138.52,
     "northing_m": 2350992.24,
     "pm25_sensor_id": 7772037,
+    "datetime_first_utc": "2024-01-29T15:00:00Z",
+    "datetime_last_utc": "2025-03-19T09:00:00Z",
     "is_active": true
   },
   {
@@ -432,6 +488,8 @@
     "easting_m": 588661.91,
     "northing_m": 2321198.33,
     "pm25_sensor_id": 7772003,
+    "datetime_first_utc": "2024-01-29T06:00:00Z",
+    "datetime_last_utc": "2024-03-01T04:00:00Z",
     "is_active": true
   },
   {
@@ -447,6 +505,8 @@
     "easting_m": 582647.52,
     "northing_m": 2328693.73,
     "pm25_sensor_id": 7771972,
+    "datetime_first_utc": "2024-01-29T06:00:00Z",
+    "datetime_last_utc": "2024-03-22T09:00:00Z",
     "is_active": true
   },
   {
@@ -462,6 +522,8 @@
     "easting_m": 577593.19,
     "northing_m": 2323079.78,
     "pm25_sensor_id": 7772004,
+    "datetime_first_utc": "2024-01-29T06:00:00Z",
+    "datetime_last_utc": "2024-02-07T00:00:00Z",
     "is_active": true
   },
   {
@@ -477,6 +539,8 @@
     "easting_m": 584465.62,
     "northing_m": 2324651.89,
     "pm25_sensor_id": 7772020,
+    "datetime_first_utc": "2024-01-29T06:00:00Z",
+    "datetime_last_utc": "2024-02-27T00:00:00Z",
     "is_active": true
   },
   {
@@ -492,6 +556,8 @@
     "easting_m": 578494.07,
     "northing_m": 2347755.37,
     "pm25_sensor_id": 7772068,
+    "datetime_first_utc": "2024-01-29T06:00:00Z",
+    "datetime_last_utc": "2024-09-09T17:00:00Z",
     "is_active": true
   },
   {
@@ -507,6 +573,8 @@
     "easting_m": 586424.98,
     "northing_m": 2329554.26,
     "pm25_sensor_id": 7772036,
+    "datetime_first_utc": "2024-01-29T06:00:00Z",
+    "datetime_last_utc": "2024-03-22T04:00:00Z",
     "is_active": true
   },
   {
@@ -522,6 +590,8 @@
     "easting_m": 580003.04,
     "northing_m": 2292997.18,
     "pm25_sensor_id": 7771984,
+    "datetime_first_utc": "2024-01-29T06:00:00Z",
+    "datetime_last_utc": "2025-02-05T04:00:00Z",
     "is_active": true
   },
   {
@@ -537,6 +607,8 @@
     "easting_m": 594901.26,
     "northing_m": 2338865.34,
     "pm25_sensor_id": 7772059,
+    "datetime_first_utc": "2024-01-29T15:00:00Z",
+    "datetime_last_utc": "2025-06-10T03:00:00Z",
     "is_active": true
   },
   {
@@ -552,6 +624,8 @@
     "easting_m": 581467.42,
     "northing_m": 2319357.31,
     "pm25_sensor_id": 7772099,
+    "datetime_first_utc": "2024-01-29T06:00:00Z",
+    "datetime_last_utc": "2024-04-05T00:00:00Z",
     "is_active": true
   },
   {
@@ -567,6 +641,8 @@
     "easting_m": 578785.09,
     "northing_m": 2334673.89,
     "pm25_sensor_id": 7772079,
+    "datetime_first_utc": "2024-01-15T07:00:00Z",
+    "datetime_last_utc": "2024-01-15T09:00:00Z",
     "is_active": true
   },
   {
@@ -582,6 +658,8 @@
     "easting_m": 559842.89,
     "northing_m": 2311230.07,
     "pm25_sensor_id": 7772015,
+    "datetime_first_utc": "2024-01-29T06:00:00Z",
+    "datetime_last_utc": "2025-03-17T01:00:00Z",
     "is_active": true
   },
   {
@@ -597,6 +675,8 @@
     "easting_m": 591555.96,
     "northing_m": 2327943.74,
     "pm25_sensor_id": 13502150,
+    "datetime_first_utc": "2025-07-03T15:40:00Z",
+    "datetime_last_utc": "2026-07-15T10:05:00Z",
     "is_active": true
   },
   {
@@ -612,6 +692,8 @@
     "easting_m": 582396.31,
     "northing_m": 2322804.13,
     "pm25_sensor_id": 13502151,
+    "datetime_first_utc": "2025-07-03T15:40:00Z",
+    "datetime_last_utc": "2026-10-25T21:50:00Z",
     "is_active": true
   },
   {
@@ -627,6 +709,8 @@
     "easting_m": 587290.38,
     "northing_m": 2323061.62,
     "pm25_sensor_id": 13502154,
+    "datetime_first_utc": "2025-07-03T15:40:00Z",
+    "datetime_last_utc": "2026-10-25T21:50:00Z",
     "is_active": true
   },
   {
@@ -642,6 +726,8 @@
     "easting_m": 597930.63,
     "northing_m": 2321803.89,
     "pm25_sensor_id": 14581375,
+    "datetime_first_utc": "2025-11-08T06:00:00Z",
+    "datetime_last_utc": "2026-10-25T01:00:00Z",
     "is_active": true
   }
 ]
