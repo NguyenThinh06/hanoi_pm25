@@ -1,6 +1,6 @@
 """
 run.py — CLI Command Center cho dự án HANOI_PM25
-Điều phối toàn bộ vòng đời: lint, test, grid, date, ingest, transform, predict.
+Điều phối toàn bộ vòng đời: lint, test, grid, date, audit, ingest, staging, core-station, predict.
 """
 from __future__ import annotations
 
@@ -35,11 +35,22 @@ def main():
     # 4. Sinh trục ngày 5 năm
     subparsers.add_parser("date", help="Sinh trục thời gian 5 năm dim_date.parquet")
 
-    # 5. Ingest
-    ingest_p = subparsers.add_parser("ingest", help="Thu thập dữ liệu")
-    ingest_p.add_argument("--source", default="all", choices=["all", "openaq", "pamair", "meteo", "satellite"])
+    # 5. Audit trạm
+    subparsers.add_parser("audit", help="Kiểm toán danh mục trạm quan trắc mặt đất OpenAQ")
 
-    # 6. Predict toàn lưới
+    # 6. Ingest trạm
+    ingest_p = subparsers.add_parser("ingest", help="Thu thập dữ liệu trạm quan trắc")
+    ingest_p.add_argument("--year", type=int, default=2024, help="Năm cần cào")
+    ingest_p.add_argument("--month", type=int, default=1, help="Tháng cần cào")
+    ingest_p.add_argument("--limit-stations", type=int, default=5, help="Giới hạn số trạm")
+
+    # 7. Staging trạm
+    subparsers.add_parser("staging", help="Làm sạch chuỗi giờ và gán cờ QC phân tầng")
+
+    # 8. Core trạm
+    subparsers.add_parser("core-station", help="Tổng hợp trung bình ngày và tạo bảng Star Schema trạm")
+
+    # 9. Predict toàn lưới
     subparsers.add_parser("predict", help="Suy luận bản đồ bụi mịn PM2.5 toàn Hà Nội")
 
     args = parser.parse_args()
@@ -55,6 +66,19 @@ def main():
 
     elif args.subcommand == "date":
         run_cmd("python -m src.features.build_dim_date", "Tao truc thoi gian 5 nam dim_date")
+
+    elif args.subcommand == "audit":
+        run_cmd("python -m src.ingest.audit_stations", "Kiem toan tram mat dat OpenAQ va map grid 1km")
+
+    elif args.subcommand == "ingest":
+        run_cmd(f"python -m src.ingest.fetch_ground_truth --year {args.year} --month {args.month} --limit-stations {args.limit_stations}",
+                "Thu thap du lieu gio tho PM2.5 tram quan trac OpenAQ")
+
+    elif args.subcommand == "staging":
+        run_cmd("python -m src.features.qc_hourly_stations", "Lam sach chuoi gio va gan co QC stg_ground_truth_hourly")
+
+    elif args.subcommand == "core-station":
+        run_cmd("python -m src.features.build_ground_truth_daily", "Tao dim_station va fct_ground_truth_daily")
 
     elif args.subcommand == "predict":
         run_cmd("python -m src.models.predict_grid", "Quet toan luoi sinh ban do o nhiem PM2.5")
