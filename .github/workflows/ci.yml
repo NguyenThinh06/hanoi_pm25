@@ -7,7 +7,7 @@ on:
     branches: [ develop, main ]
 
 jobs:
-  lakehouse-ci:
+  quality-check:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Code
