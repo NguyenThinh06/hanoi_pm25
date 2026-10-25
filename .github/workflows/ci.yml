@@ -2,29 +2,39 @@ name: HANOI_PM25 CI Pipeline
 
 on:
   push:
-    branches: [ develop, main ]
+    branches: [develop, main]
   pull_request:
-    branches: [ develop, main ]
+    branches: [develop, main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
 
 jobs:
-  quality-check:
+  lakehouse-ci:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
+
     steps:
-      - name: Checkout Code
+      - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Setup Python 3.12
+      - name: Setup Python
         uses: actions/setup-python@v5
         with:
           python-version: "3.12"
 
-      - name: Install Core Dependencies
+      - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install duckdb polars pyarrow geopandas shapely ruff pytest
+          python -m pip install duckdb polars pyarrow geopandas shapely ruff pytest
 
-      - name: Step 1 - Linting Check (ruff)
-        run: python run.py lint
+      - name: Check lint
+        run: python -m ruff check .
 
-      - name: Step 2 - Unit Tests
-        run: python run.py test
+      - name: Run unit tests
+        run: python -m pytest tests/unit/ -v
