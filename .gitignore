@@ -1,0 +1,34 @@
+# Byte-compiled / Python cache
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+# Environments
+.venv/
+env/
+venv/
+ENV/
+
+# Dữ liệu Lakehouse (Chỉ lưu máy cục bộ, tuyệt đối không push lên Git)
+data/raw/
+data/staging/
+data/marts/
+data/predictions/
+*.parquet
+*.tmp
+
+# Ngoại lệ: Cho phép push ranh giới và manifest
+!data/reference/
+!data/manifests/
+
+# Model checkpoints & logs
+models/*.pkl
+models/*.txt
+*.log
+
+# IDE & OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
