@@ -40,9 +40,10 @@ def main():
 
     # 6. Ingest trạm
     ingest_p = subparsers.add_parser("ingest", help="Thu thập dữ liệu trạm quan trắc")
-    ingest_p.add_argument("--year", type=int, default=2024, help="Năm cần cào")
-    ingest_p.add_argument("--month", type=int, default=1, help="Tháng cần cào")
-    ingest_p.add_argument("--limit-stations", type=int, default=5, help="Giới hạn số trạm")
+    ingest_p.add_argument("--start-year", type=int, default=2021, help="Năm bắt đầu (mặc định: 2021)")
+    ingest_p.add_argument("--end-year", type=int, default=2025, help="Năm kết thúc (mặc định: 2025)")
+    ingest_p.add_argument("--limit-stations", type=int, default=0, help="Giới hạn số trạm (0 = tất cả)")
+    ingest_p.add_argument("--force", action="store_true", help="Ép cào lại kể cả khi file đã tồn tại")
 
     # 7. Staging trạm
     subparsers.add_parser("staging", help="Làm sạch chuỗi giờ và gán cờ QC phân tầng")
@@ -71,8 +72,11 @@ def main():
         run_cmd("python -m src.ingest.audit_stations", "Kiem toan tram mat dat OpenAQ va map grid 1km")
 
     elif args.subcommand == "ingest":
-        run_cmd(f"python -m src.ingest.fetch_ground_truth --year {args.year} --month {args.month} --limit-stations {args.limit_stations}",
-                "Thu thap du lieu gio tho PM2.5 tram quan trac OpenAQ")
+        force_flag = "--force" if args.force else ""
+        run_cmd(
+            f"python -m src.ingest.fetch_ground_truth --start-year {args.start_year} --end-year {args.end_year} --limit-stations {args.limit_stations} {force_flag}",
+            f"Thu thap du lieu gio tho PM2.5 OpenAQ tu {args.start_year} den {args.end_year}"
+        )
 
     elif args.subcommand == "staging":
         run_cmd("python -m src.features.qc_hourly_stations", "Lam sach chuoi gio va gan co QC stg_ground_truth_hourly")
