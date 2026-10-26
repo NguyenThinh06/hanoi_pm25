@@ -54,6 +54,9 @@ def main():
     # 9. Predict toàn lưới
     subparsers.add_parser("predict", help="Suy luận bản đồ bụi mịn PM2.5 toàn Hà Nội")
 
+    # 10. Kiểm định Hợp đồng Dữ liệu (Data Contract)
+    subparsers.add_parser("contract", help="Kiểm định toàn bộ Lakehouse theo Hợp đồng Dữ liệu ODCS v3.0")
+
     args = parser.parse_args()
 
     if args.subcommand == "lint":
@@ -86,6 +89,9 @@ def main():
 
     elif args.subcommand == "predict":
         run_cmd("python -m src.models.predict_grid", "Quet toan luoi sinh ban do o nhiem PM2.5")
+
+    elif args.subcommand == "contract":
+        run_cmd("python -m src.common.contract_verifier", "Kiem dinh Lakehouse theo Hop dong Du lieu ODCS v3.0")
 
     else:
         parser.print_help()
