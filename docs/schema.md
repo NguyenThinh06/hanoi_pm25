@@ -57,7 +57,7 @@ flowchart TD
     end
 
     subgraph S_STG ["TẦNG STAGING / SILVER (data/staging/)"]
-        STG_HR["stg_ground_truth_hourly.parquet<br/>Chuẩn hóa UTC+7, Hampel, Flatline<br/>Owner: TV1"]
+        STG_HR["stg_ground_truth_hourly.parquet<br/>Chuẩn hóa thời gian, chưa QC<br/>Owner: TV1"]
         STG_STN_D["stg_ground_truth_daily.parquet<br/>Gom ngày mọi trạm (kèm is_valid_day)<br/>Owner: TV1"]
         STG_SAT_D["stg_satellite_daily.parquet<br/>Lọc QA >= 0.75, cờ MNAR AOD<br/>Owner: TV2 (Đề xuất)"]
         STG_MET_D["stg_meteo_daily.parquet<br/>Khử tích lũy mưa, Gió scalar & P, RH<br/>Owner: TV3 (Đề xuất)"]
@@ -122,7 +122,7 @@ flowchart TD
 | `stg_meteo_daily` | Staging | Parquet | Pixel/Ô – Ngày | Chờ TV3 xác nhận | `date_id` | `data/staging/stg_meteo_daily.parquet` | TV3 | *Đề xuất / Chưa có* |
 | `fct_grid_meteo_daily` | Core Fact | Parquet | Ô – Ngày (Đề xuất) | `(grid_id, date_id)` | `grid_id`, `date_id` | `data/core/fct_grid_meteo_daily.parquet` | TV3 | *Đề xuất / Chờ TV3 chốt* |
 | `mart_grid_daily_features`| Platinum Mart | Parquet | Ô – Ngày phân tích | `(grid_id, date_id)` | `grid_id`, `date_id` | `data/marts/mart_grid_daily_features.parquet` | TV2 / TV1 | *Thiết kế chuẩn / Chờ upstream* |
-| `mart_station_matched` | Platinum Mart | Parquet | Trạm – Ngày ($\ge 18\text{h}$) | `(station_id, date_id)` | `station_id`, `date_id`, `grid_id` | `data/marts/mart_station_matched.parquet` | TV1 / TV2 | *Đề xuất* |
+| `mart_station_matched` | Platinum Mart | Parquet | Trạm – Ngày có PM2.5 thô | `(station_id, date_id)` | `station_id`, `date_id`, `grid_id` | `data/marts/mart_station_matched.parquet` | TV1 / TV2 | *Đề xuất / chưa triển khai* |
 | `mart_grid_daily_eda` | Platinum Mart | Parquet | Ô – Ngày phân tích | `(grid_id, date_id)` | `grid_id`, `date_id` | `data/marts/mart_grid_daily_eda.parquet` | TV2 | *Đề xuất* |
 
 ---
@@ -333,7 +333,7 @@ LEFT JOIN fct_ground_truth_daily f
 ### 5.2. Hai Kịch bản Ghép nối Chuẩn hóa (Standardized Safe Patterns)
 
 #### Kịch bản A: Tạo Tập Dữ liệu Huấn luyện Máy học (Machine Learning Training View)
-Áp dụng cho bảng `mart_station_matched.parquet`: Lấy bảng Fact trạm làm hạt chính, ghép sang bảng đặc trưng ô lưới:
+Áp dụng cho bảng `mart_station_matched.parquet` **dự kiến**: lấy các trạm–ngày có `pm25_raw_mean IS NOT NULL`, không lọc theo ngưỡng 18 giờ; ghép đặc trưng ô–ngày và thời gian. Không đưa `valid_hours_count`, `is_valid_day` vào tập train; chúng vẫn có trong fact để đối chiếu qua `(station_id, date_id)`. Cột `is_crop_burning_window` không được chọn làm đặc trưng train hoặc estimate.
 ```sql
 -- CHUẨN A: Hạt kết quả bảo toàn đúng theo (station_id, date_id) của trạm
 SELECT 
@@ -341,7 +341,10 @@ SELECT
     f.date_id,
     f.grid_id,
     f.pm25_raw_mean AS label_pm25,  -- Nhãn thô thử nghiệm; cần lựa chọn ngày và sensor phù hợp
-    f.valid_hours_count,
+    d.month,
+    d.day_of_week,
+    d.is_weekend,
+    d.hanoi_season,
     m.temp_2m_mean_c,
     m.rh_mean_pct,
     m.wind_speed_scalar_ms,
@@ -350,9 +353,14 @@ SELECT
     m.dem_elevation_mean_m
 FROM read_parquet('data/core/fct_ground_truth_daily.parquet') f
 LEFT JOIN read_parquet('data/marts/mart_grid_daily_features.parquet') m
-    ON f.grid_id = m.grid_id AND f.date_id = m.date_id;
+    ON f.grid_id = m.grid_id AND f.date_id = m.date_id
+LEFT JOIN read_parquet('data/core/dim_date.parquet') d
+    ON f.date_id = d.date_id
+WHERE f.pm25_raw_mean IS NOT NULL;
 ```
-*Số dòng đầu ra chính xác bằng số dòng của `fct_ground_truth_daily` (100% không bị nhân dòng).*
+Số dòng đầu ra bằng số trạm–ngày có nhãn khác NULL **nếu** khóa `(grid_id, date_id)` của mart và `date_id` của `dim_date` duy nhất. Cần kiểm tra khóa trước khi ghép và số dòng sau khi ghép. Các đặc trưng có thể NULL sau LEFT JOIN.
+
+**Estimate lịch sử dự kiến:** lấy các ô–ngày cần dự đoán từ `mart_grid_daily_features`, nối `dim_date` qua `date_id` để lấy cùng bốn cột thời gian `month`, `day_of_week`, `is_weekend`, `hanoi_season`. Không đưa nhãn hoặc `is_crop_burning_window` vào X; xử lý thiếu và biến đổi đặc trưng nhất quán với train.
 
 #### Kịch bản B: Tạo Bảng Bản Đồ Phân Tích Khám Phá (EDA Surface Grid View)
 Áp dụng cho bảng `mart_grid_daily_eda.parquet`: Cần biểu diễn giá trị nồng độ ô lưới trên nền toàn bộ 6.591.860 dòng. Bắt buộc phải **tổng hợp (aggregate) các trạm trong cùng ô trước khi join**:
@@ -387,8 +395,8 @@ LEFT JOIN station_daily_aggregated s
 1. **Khung xương Lưới 1km:** `dim_grid_1km.parquet` v1.0 (3.611 dòng, 6 cột, thuật toán `intersects` với ranh giới HDX COD-AB 2025, đóng băng SHA-256).
 2. **Trục Ngày 5 Năm:** `dim_date.parquet` (1.827 dòng, 9 cột, phân loại mùa Hà Nội và cửa sổ đốt rơm rạ, khóa `-1`).
 3. **Danh mục Trạm:** `dim_station.parquet` (44 dòng gồm 43 trạm theo ảnh chụp khảo sát OpenAQ + 1 trạm ngoại lệ `station_unknown`, phân loại Tier 1/Tier 2, ánh xạ tọa độ sang `grid_id`).
-4. **Chuỗi Giờ Staging:** `stg_ground_truth_hourly.parquet` (Deduplicate qua `_row_hash`, gắn cờ QC phân tầng: âm, cực đại, flatline 6h, Hampel filter).
-5. **Gom Ngày Mặt Đất:** `stg_ground_truth_daily.parquet` (Tính trung bình và gắn cờ `is_valid_day = (valid_hours_count >= 18)`).
+4. **Chuỗi Giờ Staging:** `stg_ground_truth_hourly.parquet` (chọn revision, chuẩn hóa thời gian, chưa gắn cờ QC).
+5. **Gom Ngày Mặt Đất:** QC từng sensor–giờ trong bộ nhớ, sau đó tính trung bình ngày và gắn cờ `is_valid_day = (valid_hours_count >= 18)`. Cờ QC giờ không được lưu trong staging hourly.
 6. **Fact Mặt Đất:** `fct_ground_truth_daily.parquet` (giữ mọi trạm–ngày có bản ghi trong phạm vi 2021–2025, gắn cờ chất lượng 18 giờ, không lọc bỏ ngày thiếu giờ).
 7. **Hạ tầng Ghi/Đọc:** `src/common/io_parquet.py` (ghi nguyên tử `atomic_write_parquet`) và `src/common/hashing.py` (băm SHA-256 `compute_row_hash`).
 
@@ -428,18 +436,18 @@ Các cơ chế sau đã được thiết kế trong tài liệu kiến trúc nh�
      - `qc_flag = 2`: Vượt ngưỡng vật lý (`pm25 > 1000 ug/m3`).
      - `qc_flag = 3`: Kẹt số liên tục thực tế $\ge 6$ giờ liên tiếp (khoảng cách giữa các mốc đo nằm trong khoảng 3480–3720s). Nếu có khoảng cách thời gian gãy đoạn (> 1h), chuỗi đếm flatline bị ngắt để tránh gán cờ nhầm.
      - `qc_flag = 0`: Hợp lệ (Passed).
-  2. Bộ lọc Hampel (`is_hampel_outlier`): Được lưu thành trường độc lập mang tính chất chẩn đoán thống kê; không tự động loại giờ khỏi tổng hợp ngày trừ khi có quyết định phê duyệt chính thức.
+  2. Bộ lọc Hampel (`is_hampel_outlier`) được tính trong bộ nhớ khi tạo daily; không tự động loại giờ. QC và cờ Hampel không được ghi vào staging hourly.
 - **Trạng thái:** Đã triển khai và có Unit Test chứng minh.
 
 ### ADR-02: PM2.5 trung bình theo các giờ hợp lệ trong ngày
-- **Ngày quyết định:** 2026-10-27. **Trạng thái:** Đã triển khai theo quyết định của TV1; tiêu chí chọn nhãn train tiếp tục được nhóm xác nhận.
+- **Ngày quyết định:** 2026-10-27. **Trạng thái:** Đã triển khai cho fact; lựa chọn nhãn train được ghi tại ADR-05.
 - **Ngữ cảnh:** Dự án xây dựng bản đồ PM2.5 lịch sử theo ngày Hà Nội. Một ngày trạm có thể thiếu giờ; cần giữ dữ liệu đó để kiểm toán và tránh nhầm giá trị của một phần ngày với trung bình đầy đủ 24 giờ.
 - **Quyết định:**
   1. Thời điểm đo được lưu theo UTC; xác định ngày và giờ phân tích theo `Asia/Ho_Chi_Minh`.
   2. Với mỗi `(station_id, date_id, hour_local)`, chỉ sử dụng phép đo có `qc_flag = 0` và PM2.5 hữu hạn; nếu có nhiều phép đo sạch cùng giờ, implementation hiện tại lấy trung bình chúng thành một giá trị giờ. Chưa có quy tắc ưu tiên sensor được phê duyệt.
   3. `pm25_raw_mean` là trung bình cộng các giá trị giờ sạch trong ngày, mỗi giờ một trọng số, làm tròn 2 chữ số thập phân. Đây là giá trị thô sau QC, không phải giá trị đã hiệu chỉnh. `valid_hours_count` là số giờ sạch duy nhất dùng trong phép tính.
   4. Ngày có 1–17 giờ sạch vẫn có trung bình các giờ quan sát và được giữ trong staging và fact. Không tự ngoại suy thành trung bình đủ 24 giờ. Ngày có bản ghi nhưng không có giờ sạch được giữ với `valid_hours_count = 0` và `pm25_raw_mean = NULL`. Ngày hoàn toàn không có bản ghi giờ không tự tạo dòng.
-  5. `is_valid_day = 1` khi có ít nhất 18 giờ sạch, ngược lại bằng `0`. Đây là cờ chất lượng, không phải điều kiện lọc fact. Lựa chọn các ngày để train sẽ được quyết định riêng.
+  5. `is_valid_day = 1` khi có ít nhất 18 giờ sạch, ngược lại bằng `0`. Đây là cờ chất lượng, không phải điều kiện lọc fact hoặc bộ lọc nhãn train theo ADR-05.
   6. Fact giữ các trạm-ngày có bản ghi trong phạm vi dự án 2021–2025; ngày ngoài phạm vi vẫn ở staging. Khóa fact là `(station_id, date_id)`, `grid_id` được ánh xạ từ danh mục trạm hiện tại.
 - **Hệ quả:** Trung bình dựa trên ít giờ có thể lệch so với trung bình 24 giờ, nhất là khi giờ thiếu không phân bố đều. Cần giữ số giờ và cờ chất lượng khi phân tích. Vị trí trạm theo lịch sử cần được xác minh nếu trạm di chuyển.
 - **Tham chiếu triển khai:** `src/features/build_ground_truth_daily.py`; kiểm thử trong `tests/unit/test_qc_and_aggregation.py`.
@@ -459,3 +467,10 @@ Các cơ chế sau đã được thiết kế trong tài liệu kiến trúc nh�
   2. Cơ chế khóa file: `file_concurrency_lock` ghi nhận PID của tiến trình và kiểm tra trạng thái sống của tiến trình (`is_process_alive`). Tuyệt đối không tự ý bẻ khóa nếu tiến trình sở hữu vẫn đang hoạt động. Giới hạn: Đây là advisory lock đơn máy, quy trình ingestion thiết kế tối ưu cho chạy tuần tự (single-process / sequential).
   3. Khử trùng revision: Nhận diện bộ khóa nghiệp vụ `(station_id, sensor_id, datetime_utc)` và so khớp với mã băm nội dung `_row_hash` của phiên bản mới nhất hiện tại. Hỗ trợ đầy đủ chuỗi revision $A \rightarrow B \rightarrow A$ mà không làm mất bản cập nhật và không gây trùng lặp khi chạy lại với cờ `--force`.
 - **Trạng thái:** Đã triển khai và có Unit Test chứng minh.
+
+### ADR-05: Chọn nhãn trạm–ngày và ghép thuộc tính ngày
+- **Trạng thái:** Quyết định của TV1 cho thiết kế train và estimate; các mart chưa triển khai.
+- **Nhãn train:** Từ fact chọn `pm25_raw_mean IS NOT NULL`, kể cả ngày dưới 18 giờ; giữ `station_id`, `grid_id`, `date_id` để truy xuất. Không đưa `valid_hours_count`, `is_valid_day` vào tập train; khi cần đánh giá chất lượng, nối lại fact theo `(station_id, date_id)`.
+- **Đặc trưng thời gian:** Nối `dim_date` qua `date_id` để lấy `month`, `day_of_week`, `is_weekend`, `hanoi_season` cho cả train và estimate. Không chọn `is_crop_burning_window` làm đầu vào mô hình; cột này vẫn tồn tại trong `dim_date`.
+- **Ghép đặc trưng:** Nối mart đặc trưng qua `(grid_id, date_id)`, kiểm tra khóa duy nhất trước join; không đưa PM2.5 làm đặc trưng đầu vào.
+- **Giới hạn:** Dòng có ít giờ chỉ phản ánh các giờ quan sát, không bảo đảm đại diện đủ 24 giờ. Báo cáo độ đầy đủ và chất lượng sensor khi đánh giá mô hình.

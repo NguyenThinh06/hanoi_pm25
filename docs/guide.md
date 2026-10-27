@@ -36,7 +36,7 @@ Dự án HANOI_PM25 tuân thủ nguyên tắc **Zero-RDBMS**:
 - Không cài đặt hay chạy dịch vụ ngầm bất kỳ máy chủ cơ sở dữ liệu nào (PostgreSQL/PostGIS, MySQL, SQL Server).
 - Toàn bộ dữ liệu được lưu trữ nguyên tử dưới định dạng **Apache Parquet** và **GeoParquet 1.1.0** (chuẩn nén `zstd`), phân tầng Medallion rõ ràng:
   - `data/raw/`: Dữ liệu thô nguyên bản từ các API và vệ tinh, tổ chức phân vùng Hive (`source=.../year=.../month=...`).
-  - `data/staging/`: Dữ liệu chuỗi giờ làm sạch, chuẩn hóa múi giờ Hà Nội, gắn cờ QC phân tầng.
+  - `data/staging/`: Dữ liệu giờ chuẩn hóa múi giờ Hà Nội; QC được tính khi tổng hợp daily.
   - `data/core/`: Mô hình hình sao Kimball (Star Schema) gồm 3 Dimensions và 3 Facts.
   - `data/marts/`: Bảng thành phẩm đặc trưng không-thời gian phục vụ Machine Learning và trực quan hóa.
 - Engine tính toán duy nhất: **DuckDB SQL nhúng** và thư viện **Polars** trong Python.
@@ -68,7 +68,7 @@ Theo tệp kê khai chuẩn `data/manifests/grid_manifest.json` và provenance `
 | Ranh giới Hà Nội & Lưới 1km Spine (`dim_grid_1km` v1.0) | **R / A** | C | C | Đã đóng băng 3.611 dòng |
 | Trục ngày 5 năm (`dim_date`) | **R / A** | I | I | Đã đóng băng 1.827 dòng |
 | Danh mục trạm mặt đất (`dim_station`) | **R / A** | I | I | Đã hoàn thành (44 dòng: snapshot khảo sát 43 trạm trong bbox + 1 unknown) |
-| Ingest chuỗi giờ OpenAQ thô & Staging QC trạm | **R / A** | I | I | Đã hoàn thành |
+| Ingest và chuẩn hóa chuỗi giờ; QC ở bước tổng hợp ngày | **R / A** | I | I | Đã triển khai |
 | Bảng Fact mặt đất ngày (`fct_ground_truth_daily`) | **R / A** | I | I | Giữ mọi ngày có bản ghi; gắn cờ đủ 18 giờ |
 | 15 Biến tĩnh đô thị (`dim_grid_1km` v1.1) | C | **R / A** | I | Đang thực hiện |
 | Ingest & Staging Viễn thám (MODIS, S5P, VIIRS) | I | **R / A** | C | Đang thực hiện |
@@ -169,11 +169,10 @@ flowchart LR
   - `_row_hash` (`VARCHAR`): Mã băm SHA-256 nội dung dòng.
 
 #### Tầng Staging: `data/staging/stg_ground_truth_hourly.parquet`
-- **Hạt dữ liệu (Grain):** Trạm – Sensor – Giờ làm sạch và gán cờ QC.
+- **Hạt dữ liệu (Grain):** Trạm – Sensor – Giờ sau chọn phiên bản và chuẩn hóa thời gian, chưa gắn cờ QC.
 - **Khóa chính:** `(station_id, sensor_id, datetime_utc)`.
-- **Cấu trúc cột:** Toàn bộ cột của tầng Raw kèm:
-  - `qc_flag` (`INT32`, not null): Cờ phân tầng: `0` (Sạch), `1` (Âm $< 0$, NaN, Inf, -Inf, Null, Timestamp hỏng), `2` (Vượt ngưỡng vật lý $> 1.000\,\mu\text{g}/\text{m}^3$), `3` (Flatline kẹt cảm biến liên tục thực tế $\ge 6\text{h}$).
-  - `is_hampel_outlier` (`INT32`, not null): `1` nếu phát hiện ngoại lai qua bộ lọc Hampel ($window=7\text{h}, 3\sigma$), `0` nếu bình thường (chẩn đoán độc lập, không loại giờ).
+- **Cấu trúc cột:** `station_id`, `sensor_id`, `grid_id`, `datetime_utc`, `datetime_local`, `pm25`, `sensor_tier`, `station_microenv`, `_row_hash`.
+- **QC khi tạo daily:** `qc_flag` và `is_hampel_outlier` được tính trong bộ nhớ trước tổng hợp; không ghi vào file staging hourly. Hampel chỉ chẩn đoán, không tự loại giờ. `qc_flag`: 0 sạch, 1 âm/thiếu/không hữu hạn, 2 vượt 1.000, 3 flatline.
 
 #### Tầng Core Fact: `data/core/fct_ground_truth_daily.parquet`
 - **Hạt dữ liệu (Grain):** **Trạm – Ngày** có bản ghi giờ, kể cả ngày dưới 18 giờ sạch hoặc không có giờ sạch; chưa phải bảng nhãn ô–ngày.
@@ -188,11 +187,11 @@ flowchart LR
   - Nếu trạm có nhiều sensor cùng đo trong giờ, giá trị giờ là trung bình các sensor sạch; không tự ý ưu tiên loại bỏ sensor nào khi chưa có nghiên cứu đồng vị trí.
 - **Quy tắc Quality Gate $\ge 18\text{h}$ hợp lệ:**
   - Ngưỡng $\ge 18$ tính trên số giờ duy nhất trong ngày có `qc_flag = 0` và giá trị hữu hạn.
-  - Staging giữ mọi ngày có bản ghi giờ; fact giữ các ngày trong phạm vi 2021–2025. Ngày dưới 18 giờ có `is_valid_day = 0`; nếu không có giờ sạch thì `pm25_raw_mean = NULL`. Lọc nhãn huấn luyện là quyết định riêng.
+  - Staging giữ mọi ngày có bản ghi giờ; fact giữ các ngày trong phạm vi 2021–2025. Ngày dưới 18 giờ có `is_valid_day = 0`; nếu không có giờ sạch thì `pm25_raw_mean = NULL`. Bảng nhãn train dự kiến chọn `pm25_raw_mean IS NOT NULL`, không lọc theo 18 giờ.
 - **Ngữ nghĩa hiệu chuẩn PM2.5:**
   - Chưa có phương pháp hiệu chỉnh được nghiệm thu trong repository; không xuất cột PM2.5 hiệu chỉnh trong staging daily hoặc fact.
   - Tuyệt đối không tự ý gán giá trị thô thành "đã hiệu chỉnh", không tự áp dụng công thức $\kappa$-Köhler khi chưa có mô hình được duyệt. Toàn bộ `pm25_raw_mean` được bảo tồn nguyên vẹn làm cơ sở đối chuẩn.
-  - Bảng nhãn cấp ô–ngày và ma trận ghép đặc trưng `mart_station_matched.parquet` là các dataset dự kiến ở giai đoạn sau.
+  - `mart_station_matched.parquet` là dataset trạm–ngày dự kiến: ghép đặc trưng ô–ngày theo `(grid_id, date_id)` và `dim_date` theo `date_id`; dùng `month`, `day_of_week`, `is_weekend`, `hanoi_season` cho train và estimate, không dùng `is_crop_burning_window` làm đặc trưng. Không đưa `valid_hours_count` và `is_valid_day` vào tập train; có thể truy xuất chúng từ fact theo `(station_id, date_id)`.
 
 ### 3.6. Bảng Đầu ra Bàn giao của TV1
 
@@ -323,106 +322,175 @@ openaq_example  | 20210101 | grid_584000_2324000  | 24                | 68.42
 
 ### 5.1. Vai trò và Phạm vi của TV3
 - **Phụ trách:**
-  - Kết nối Copernicus Climate Data Store (CDS API) và GEE khí quyển.
-  - Tải chuỗi giờ tái phân tích khí tượng ERA5-Land (~9km) và Chiều cao lớp biên ERA5 BLH (~31km).
-  - Áp dụng thuật toán khử tích lũy lượng mưa giờ, tính vận tốc gió vô hướng $V_{\text{scalar}}$, tỷ số bền vững gió $P$, và độ ẩm tương đối $RH$ (Magnus-Tetens).
-  - **Bàn giao Staging Khí tượng:** Xuất bản `stg_meteo_daily.parquet` (kèm cột `rh_mean_pct`) phục vụ đối soát và tích hợp vào Feature Mart.
-  - Nội suy và broadcast khí tượng từ pixel gốc sang 3.610 ô lưới, đóng gói `fct_grid_meteo_daily.parquet`.
-- **Không phụ trách:** Viễn thám MODIS/S5P/VIIRS (của TV2); dữ liệu trạm OpenAQ (của TV1); biến tĩnh đô thị (của TV2).
-- **Phụ thuộc:**
-  - *Làm được ngay:* Cài đặt `cdsapi`, tải dữ liệu mẫu và tải toàn bộ chuỗi giờ 5 năm tại các pixel gốc.
-  - *Đầu ra chờ xác nhận:* Chốt thuật toán nội suy (Nearest Neighbor vs Bilinear) với Data Architect trước khi broadcast sang 3.610 ô lưới.
+  - Kết nối Copernicus Climate Data Store (CDS API) thu thập dữ liệu tái phân tích khí tượng ERA5-Land (~0.1°, ~9km) và Chiều cao lớp biên hành tinh ERA5 BLH (~0.25°, ~31km).
+  - Áp dụng thuật toán khử tích lũy lượng mưa giờ theo chu kỳ dự báo ECMWF, tính vận tốc gió tức thời và vô hướng $V_{\text{scalar}}$, tỷ số bền vững gió $P$, khí áp bề mặt $sp$, chiều cao lớp biên $blh$ (mean và min), và độ ẩm tương đối $RH$ (Magnus-Tetens).
+  - **Bàn giao Staging Khí tượng:** Xuất bản `stg_meteo_daily.parquet` (kèm cột `rh_mean_pct`, `valid_hours_count`, `is_valid_day`) phục vụ đối soát và tích hợp vào Feature Mart.
+  - Nội suy và ánh xạ khí tượng từ pixel gốc sang 3.610 ô lưới 1km, bảo đảm ma trận khung xương phân tích đầy đủ (Analysis Spine $3.610 \times 1.826 = 6.591.860$ dòng), đóng gói `fct_grid_meteo_daily.parquet`.
+- **Không phụ trách:** Viễn thám MODIS/S5P/VIIRS (của TV2); dữ liệu trạm OpenAQ và Ground Truth (của TV1); 15 biến tĩnh đô thị (của TV2).
+- **Phụ thuộc & Giới hạn:**
+  - Không tự ý tải toàn bộ 5 năm khi chưa có kết quả mẫu được nghiệm thu; pipeline hỗ trợ đường dẫn sandbox/tùy chọn để thử nghiệm an toàn.
+  - RH chỉ được bàn giao làm vector đặc trưng và đầu vào nghiên cứu, tuyệt đối không tự ý áp dụng công thức $\kappa$-Köhler hiệu chỉnh PM2.5.
+  - Phương pháp ánh xạ mặc định là Nearest Neighbor (`nearest`), hỗ trợ Bilinear Interpolation (`bilinear`) qua tham số cấu hình; phương pháp được ghi nhận rõ trong metadata/manifest.
 
-### 5.2. Danh sách Nguồn Dữ liệu TV3 Thu thập
+### 5.2. Danh sách Nguồn Dữ liệu Chính thức Đã Xác Minh
 
-#### Nguồn 1: Tái phân tích Khí tượng ERA5-Land Hourly (Bắt buộc)
+#### Nguồn 1: Tái phân tích Khí tượng ERA5-Land Hourly
 - **Cơ quan cung cấp:** Trung tâm Dự báo Thời tiết Hạn vừa Châu Âu (ECMWF) / Copernicus Climate Change Service (C3S).
 - **Dataset ID trên CDS:** `reanalysis-era5-land`.
 - **Tài liệu chính thức:** [ERA5-Land Documentation (ECMWF)](https://confluence.ecmwf.int/display/CKB/ERA5-Land).
-- **Phương thức thu thập:** Gửi API request qua thư viện Python `cdsapi` (cấu hình tệp `~/.cdsapirc`).
-- **Độ phân giải & Phạm vi:**
-  - Độ phân giải không gian: $0.1^\circ \times 0.1^\circ$ (~9.5km tại Hà Nội).
-  - Độ phân giải thời gian: Hàng giờ (Hourly).
-  - Phạm vi bao phủ: Bounding box Hà Nội `[21.39, 105.28, 20.56, 106.02]` (North, West, South, East).
-- **Danh sách biến và hệ số chuyển đổi:**
-  - `2m_temperature` (`t2m`): Đơn vị gốc Kelvin $\rightarrow$ Chuyển sang độ C: $T_{^\circ\text{C}} = T_K - 273.15$.
-  - `2m_dewpoint_temperature` (`d2m`): Đơn vị gốc Kelvin $\rightarrow$ Chuyển sang độ C: $T_{d,^\circ\text{C}} = T_{d,K} - 273.15$.
-  - `total_precipitation` (`tp`): Đơn vị gốc mét $\rightarrow$ Nhân $1000.0$ ra milimét (mm), áp dụng khử tích lũy.
+- **Độ phân giải không gian:** Lưới đều kinh vĩ độ $0.1^\circ \times 0.1^\circ$ (~9.5km tại Hà Nội).
+- **Độ phân giải thời gian:** Hàng giờ (Hourly).
+- **Danh sách biến chính thức và đơn vị:**
+  - `2m_temperature` (`t2m`): Đơn vị gốc Kelvin ($K$) $\rightarrow$ Chuyển sang độ C: $T_{^\circ\text{C}} = T_K - 273.15$.
+  - `2m_dewpoint_temperature` (`d2m`): Đơn vị gốc Kelvin ($K$) $\rightarrow$ Chuyển sang độ C: $T_{d,^\circ\text{C}} = T_{d,K} - 273.15$.
+  - `total_precipitation` (`tp`): Đơn vị gốc mét ($m$) $\rightarrow$ Nhân $1000.0$ ra milimét ($mm$), áp dụng khử tích lũy.
   - `10m_u_component_of_wind` (`u10`): Gió thành phần Đông-Tây ($\text{m}/\text{s}$).
   - `10m_v_component_of_wind` (`v10`): Gió thành phần Bắc-Nam ($\text{m}/\text{s}$).
-  - `surface_pressure` (`sp`): Khí áp bề mặt Pa $\rightarrow$ Chia $100.0$ ra hPa.
-- **Tài khoản & Hạn mức:** Đăng ký tài khoản miễn phí trên Copernicus CDS, chấp nhận các điều khoản dịch vụ (Terms of Use). Mỗi request không nên vượt quá 1 năm chuỗi giờ.
-- **Giấy phép:** Copernicus Open Access Licence (Sử dụng học thuật và phi thương mại miễn phí).
+  - `surface_pressure` (`sp`): Khí áp bề mặt Pascal ($Pa$) $\rightarrow$ Chia $100.0$ ra hPa.
+- **Giấy phép:** Copernicus Open Access Licence (Miễn phí cho nghiên cứu học thuật và phi thương mại).
 
-#### Nguồn 2: Chiều cao Lớp biên Hành tinh ERA5 Single Levels (BLH) (Bắt buộc)
+#### Nguồn 2: Chiều cao Lớp biên Hành tinh ERA5 Single Levels (BLH)
 - **Cơ quan cung cấp:** ECMWF / Copernicus C3S.
 - **Dataset ID trên CDS:** `reanalysis-era5-single-levels`.
 - **Tài liệu chính thức:** [ERA5 Single Levels Documentation](https://confluence.ecmwf.int/display/CKB/ERA5%3A+data+documentation).
-- **Biến thu thập:** `boundary_layer_height` (`blh`, đơn vị mét).
 - **Độ phân giải:** Không gian $0.25^\circ \times 0.25^\circ$ (~31km tại Hà Nội), thời gian hàng giờ.
-- **Kỹ thuật Native Pixels:** Toàn bộ Hà Nội chỉ nằm trong **đúng ~8 điểm pixel gốc BLH**. TV3 chỉ tải đúng 8 điểm pixel này để tránh quá tải hạn ngạch API.
+- **Biến thu thập:** `boundary_layer_height` (`blh`, đơn vị mét).
 
-### 5.3. Quy trình Thu thập & Kỹ thuật Native Pixels của TV3
-1. **Chiến thuật Trích xuất tại Tâm Pixel Gốc (Native Centroids):**
-   - Thay vì truy vấn lặp lại 3.610 lần trên lưới 1km, TV3 xác định danh sách tọa độ tâm của **~45 pixel gốc ERA5-Land** và **~8 pixel gốc BLH**.
-   - Tải chuỗi giờ của các pixel này về máy và lưu trữ dạng thô NetCDF/GRIB hoặc Parquet tại `data/raw/atmospheric/`.
-2. **Cửa sổ Truy vấn UTC Mở rộng:**
-   - Bắt đầu từ `"2020-12-31T16:00:00Z"` đến `"2026-01-01T08:00:00Z"` để bảo toàn trọn vẹn 24 giờ cho ngày địa phương `2021-01-01`.
+### 5.3. Phạm vi Không gian, Thời gian & Vùng đệm Kỹ thuật (Buffers)
 
-### 5.4. Quy tắc Biến đổi Vật lý Khí tượng của TV3
+1. **Phạm vi Không gian & Vùng đệm Biên (Spatial Buffer):**
+   - Lưới phân tích Hà Nội có tọa độ WGS84: Kinh độ $[105.2860, 106.0173]^\circ\text{E}$, Vĩ độ $[20.5667, 21.3888]^\circ\text{N}$.
+   - **Quy tắc không hard-code số pixel:** Không mặc định con số 45 hay 8 pixel nếu chưa có buffer. Nếu chỉ lấy đúng bounding box chặt, các ô lưới 1km ở vùng biên sẽ nằm ngoài convex hull của các tâm pixel gốc, khiến thuật toán Bilinear Interpolation bị lỗi thiếu 4 điểm bao quanh (extrapolation) hoặc Nearest Neighbor bị méo ở biên.
+   - **Vùng đệm chuẩn hóa:** Mở rộng bounding box truy vấn CDS thêm khoảng $0.2^\circ - 0.3^\circ$ mỗi phía:
+     `North = 21.6, West = 105.0, South = 20.3, East = 106.3`.
+     Số lượng pixel gốc được script xác định động từ bounding box mở rộng này.
+2. **Phạm vi Thời gian & Vùng đệm Lượng mưa (Temporal Buffer):**
+   - Khoảng phân tích: 5 năm lịch Hà Nội từ `2021-01-01` đến `2025-12-31` (`Asia/Ho_Chi_Minh`, $UTC+7$).
+   - Khoảng UTC tối thiểu tương ứng: `[2020-12-31T17:00:00Z, 2025-12-31T17:00:00Z)`.
+   - **Lý do cần vùng đệm trước (Temporal Buffer):**
+     Biến `total_precipitation` trong ERA5-Land là lượng mưa tích lũy từ 00:00 UTC của chu kỳ dự báo. Mốc giờ đầu tiên của ngày Hà Nội đầu tiên (`2021-01-01 01:00:00+07:00`) tương ứng với `2020-12-31 18:00:00 UTC`. Lượng mưa rơi trong giờ từ 17:00 đến 18:00 UTC là $\Delta tp = tp(18\text{h}) - tp(17\text{h})$. Để tính được giá trị này, bắt buộc phải có mốc $tp(17\text{h})$ ngày 31/12/2020.
+     Do đó, vùng đệm thời gian tải về bắt đầu từ trọn vẹn ngày UTC `2020-12-31 00:00:00Z` đến hết `2025-12-31 23:00:00Z` (hoặc `2026-01-01 00:00:00Z`).
 
-#### 1. Khử tích lũy Lượng mưa Giờ ERA5-Land
-Biến `total_precipitation` trong ERA5-Land tích lũy từ đầu chu kỳ dự báo (reset lúc 00:00 UTC). Công thức khử tích lũy từng giờ:
-$$\text{precip\_h} = \begin{cases} \text{tp}_1 \times 1000 & \text{với } h = 1 \text{ (mốc reset)} \\ \max(0.0, (\text{tp}_h - \text{tp}_{h-1}) \times 1000) & \text{với } h \in [2, 24] \end{cases}$$
-Tổng lượng mưa ngày: $\text{precip\_daily\_mm} = \sum_{h=1}^{24} \text{precip\_h}$.
+### 5.4. Quy tắc Biến đổi Vật lý Khí tượng & Xử lý Chất lượng
+
+#### 1. Khử tích lũy Lượng mưa Giờ ERA5-Land (De-accumulation)
+- **Quy tắc chu kỳ ECMWF:** Trong ERA5-Land hourly, $tp$ được tích lũy từ 00:00 UTC mỗi ngày.
+  - Tại $h = 01:00\text{ UTC}$ (bước reset đầu tiên trong ngày UTC): $r_1 = \max(0.0, tp_1 \times 1000.0)$.
+  - Tại $h \in [02:00, 24:00]\text{ UTC}$: $\Delta = (tp_h - tp_{h-1}) \times 1000.0$.
+    + Nếu $\Delta < 0$ và $\Delta \ge -10^{-4}$: Do sai số làm tròn số học float $\rightarrow$ kẹp về $0.0\text{ mm}$.
+    + Nếu $\Delta < -10^{-4}$: Bất thường âm nguồn dữ liệu $\rightarrow$ log cảnh báo và kẹp về $0.0\text{ mm}$.
+    + Nếu $\Delta \ge 0$: Lấy đúng $\Delta$.
+- **Ranh giới ngày Hà Nội:** Tuyệt đối không nhóm lượng mưa theo ngày UTC và không lấy cuối ngày trừ đầu ngày (vì mốc reset 00:00 UTC nằm ở 07:00 sáng giữa ngày Hà Nội). Phải khử tích lũy từng giờ UTC trước, sau đó mới cộng tổng 24 giờ của ngày Hà Nội:
+  $$\text{precip\_daily\_mm} = \sum_{h \in \text{Day}_{\text{Hanoi}}} r_h$$
 
 #### 2. Tính Tốc độ Gió Vô hướng & Tỷ số Bền vững Gió
 - Tốc độ gió tức thời từng giờ: $w_h = \sqrt{u_{10,h}^2 + v_{10,h}^2}$.
-- Tốc độ gió vô hướng trung bình ngày: $V_{\text{scalar}} = \frac{1}{24}\sum_{h=1}^{24} w_h$.
-- Tốc độ gió có hướng trung bình ngày: $V_{\text{vector}} = \sqrt{\left(\frac{1}{24}\sum u_{10,h}\right)^2 + \left(\frac{1}{24}\sum v_{10,h}\right)^2}$.
+- Tốc độ gió vô hướng trung bình ngày: $V_{\text{scalar}} = \frac{1}{N}\sum_{h=1}^N w_h$.
+- Vector gió trung bình ngày: $\bar{u} = \frac{1}{N}\sum u_{10,h}, \bar{v} = \frac{1}{N}\sum v_{10,h} \rightarrow V_{\text{vector}} = \sqrt{\bar{u}^2 + \bar{v}^2}$.
 - Tỷ số bền vững hướng gió:
   $$P = \frac{V_{\text{vector}}}{\max(V_{\text{scalar}}, 10^{-4})}, \quad P \in [0.0, 1.0]$$
-  *(Ràng buộc tự động: Luôn bảo đảm $V_{\text{vector}} \le V_{\text{scalar}} + 10^{-5}$).*
+  Khi gió lặng ($V_{\text{scalar}} < 10^{-4}\text{ m/s}$): $P = 0.0$.
 
 #### 3. Tính Độ ẩm Tương đối Magnus-Tetens
-Áp dụng công thức Magnus-Tetens tính độ ẩm từng giờ:
+Tính theo từng giờ từ nhiệt độ $T_{^\circ\text{C}}$ và điểm sương $T_{d,^\circ\text{C}}$ (Alduchov & Eskridge 1996):
 $$RH_h = \min\left(100.0, \max\left(0.0, 100.0 \times \frac{\exp\left(\frac{17.625 \cdot T_{d,^\circ\text{C}}}{243.04 + T_{d,^\circ\text{C}}}\right)}{\exp\left(\frac{17.625 \cdot T_{^\circ\text{C}}}{243.04 + T_{^\circ\text{C}}}\right)}\right)\right)$$
-Sau đó tính trung bình 24 giờ của ngày địa phương Hà Nội để thu được `rh_mean_pct`.
+Nếu $T_d > T$ (sai số số học), kẹp tại $100.0\%$. Sau đó lấy trung bình các giờ hợp lệ trong ngày.
 
-### 5.5. Schema ở Từng Tầng do TV3 Phụ trách
+#### 4. Chính sách Số giờ Hợp lệ & Dữ liệu Thiếu
+- Đếm số giờ có đầy đủ dữ liệu sạch: $N = \text{valid\_hours\_count} \in [0, 24]$.
+- Cờ chất lượng ngày: $\text{is\_valid\_day} = 1$ khi $N \ge 18$, ngược lại $0$.
+- Tuyệt đối không chia mặc định cho 24 khi thiếu giờ; mọi giá trị trung bình ngày đều chia cho số giờ hợp lệ $N$.
+- Khi $N = 0$: Mọi trường khí tượng nhận giá trị `NULL`.
+
+### 5.5. Phương pháp Ánh xạ Không gian sang Lưới 1km (Spatial Mapping)
+
+Hỗ trợ 2 phương pháp chuyển đổi không gian từ pixel gốc sang 3.610 ô lưới:
+1. **Nearest Neighbor (`nearest` - Mặc định):**
+   - Với mỗi ô lưới 1km (tọa độ tâm chuyển từ `EPSG:3405` sang `EPSG:4326`), tìm pixel ERA5-Land gần nhất và pixel BLH gần nhất theo khoảng cách địa lý có trọng số cosine vĩ độ.
+   - Ưu điểm: Bảo toàn phân bố giá trị gốc, không làm mượt (smoothing) nhân tạo các cực trị.
+2. **Bilinear Interpolation (`bilinear`):**
+   - Nội suy song tuyến tính từ 4 pixel bao quanh trên lưới đều. Nếu ô nằm ở biên ngoài lưới pixel, tự động fallback an toàn về Nearest Neighbor.
+   - Ưu điểm: Tạo trường biến thiên liên tục, giảm thiểu bậc thang giữa các ranh giới ô.
+- **Rào chắn Ma trận Khung xương Phân tích (Spine Invariant):**
+  - Khung xương được tạo từ tích Descartes giữa $N_{\text{GRID}} = 3.610\text{ ô thực}$ và $N_{\text{DAYS}} = 1.826\text{ ngày thực}$ ($|S| = 6.591.860\text{ dòng}$).
+  - `LEFT JOIN` khung xương với bảng nội suy ô–ngày; bảo đảm không bao giờ rơi dòng, không nhân dòng, không có khóa trùng lặp.
+  - Các ô hoặc ngày không có quan trắc khí tượng nhận `NULL` tự nhiên.
+  - Tuyệt đối không chứa cột PM2.5, trạm hay nhãn.
+
+### 5.6. Đặc tả Schema Bàn giao của TV3
 
 #### Bảng Staging Khí tượng: `data/staging/stg_meteo_daily.parquet`
-- **Hạt dữ liệu:** Pixel gốc ERA5 – Ngày địa phương.
-- **Khóa chính:** `(pixel_id, date_id)`.
-- **Ý nghĩa:** Chứa các trường nhiệt độ, độ ẩm, gió, lượng mưa và BLH trước khi broadcast sang lưới 1km.
-- **Yêu cầu then chốt:** Cung cấp cột `rh_mean_pct` phục vụ ma trận đặc trưng `mart_grid_daily_features` và cơ sở nghiên cứu hiệu chuẩn.
+- **Hạt dữ liệu (Grain):** Pixel gốc ERA5 – Ngày địa phương Hà Nội (`latitude`, `longitude`, `date_id`).
+- **Khóa chính:** `(latitude, longitude, date_id)`.
+- **Cột:** `latitude`, `longitude`, `date_actual`, `date_id`, `total_hours_in_day`, `valid_hours_count`, `is_valid_day`, `temp_2m_mean_c`, `dewpoint_2m_mean_c`, `rh_mean_pct`, `precip_daily_mm`, `wind_speed_scalar_ms`, `wind_persistence`, `surface_pressure_hpa`.
 
-#### Bảng Fact Khí tượng: `data/core/fct_grid_meteo_daily.parquet`
-- **Hạt dữ liệu đề xuất:** Ô lưới – Ngày (`grid_id`, `date_id`).
-- **Khóa chính:** `(grid_id, date_id)`.
-- **Khóa ngoại:** `grid_id` $\rightarrow$ `dim_grid_1km`, `date_id` $\rightarrow$ `dim_date`.
-- **Hình thức:** Đầy đủ (Dense 6.591.860 dòng) sau khi hoàn tất broadcast sang 3.610 ô lưới.
-- **Bảng cột:**
+#### Bảng Fact Khí tượng Cốt lõi: `data/core/fct_grid_meteo_daily.parquet`
+- **Hạt dữ liệu (Grain):** **Ô lưới 1km – Ngày địa phương Hà Nội** (`grid_id`, `date_id`).
+- **Khóa chính:** `(grid_id, date_id)` (Duy nhất 100%, không Null).
+- **Khóa ngoại:** `grid_id` $\rightarrow$ `dim_grid_1km(grid_id)`, `date_id` $\rightarrow$ `dim_date(date_id)`.
+- **Quy mô ma trận:** Đầy đủ $6.591.860\text{ dòng}$ ($3.610\text{ ô} \times 1.826\text{ ngày}$).
 
-| Tên cột | Kiểu dữ liệu | Đơn vị | Nullable | Mô tả & Công thức tạo | Ví dụ |
-| :--- | :--- | :---: | :---: | :--- | :--- |
-| `grid_id` | `VARCHAR` | Mã ô | **NO** | Mã định danh ô lưới $1\text{ km}$ | `'grid_584000_2324000'` |
-| `date_id` | `INT32` | Số nguyên | **NO** | Ngày lịch `YYYYMMDD` | `20210101` |
-| `temp_2m_mean_c` | `FLOAT` | $^\circ\text{C}$ | YES | Nhiệt độ 2m trung bình 24h ($T_K - 273.15$) | `18.45` |
-| `dewpoint_2m_mean_c` | `FLOAT` | $^\circ\text{C}$ | YES | Điểm sương 2m trung bình 24h | `14.20` |
-| `rh_mean_pct` | `FLOAT` | $\%$ | YES | Độ ẩm tương đối Magnus-Tetens trung bình 24h | `76.5` |
-| `precip_daily_mm` | `FLOAT` | mm | YES | Tổng lượng mưa ngày đã khử tích lũy | `0.0` |
-| `wind_speed_scalar_ms`| `FLOAT` | $\text{m}/\text{s}$ | YES | Tốc độ gió vô hướng 24h $V_{\text{scalar}}$ | `2.85` |
-| `wind_persistence` | `FLOAT` | Tỷ số | YES | Độ bền vững hướng gió $P \in [0, 1]$ | `0.82` |
-| `surface_pressure_hpa`| `FLOAT` | hPa | YES | Khí áp bề mặt trung bình ngày ($sp / 100.0$) | `1016.5` |
-| `blh_mean_m` | `FLOAT` | Mét | YES | Chiều cao lớp biên trung bình ngày | `420.0` |
-| `blh_min_m` | `FLOAT` | Mét | YES | Chiều cao lớp biên ban đêm (nghịch nhiệt) | `185.0` |
+| Tên cột | Kiểu dữ liệu | Đơn vị | Nullable | Mô tả & Công thức tạo | Dải giá trị hợp lệ |
+| :--- | :--- | :---: | :---: | :--- | :---: |
+| `grid_id` | `VARCHAR` | Mã ô | **NO** | Mã định danh ô lưới 1km (ví dụ: `grid_584000_2324000`) | Whitelist `dim_grid_1km` |
+| `date_id` | `INT32` | Số nguyên | **NO** | Khóa ngày địa phương `YYYYMMDD` (20210101 đến 20251231) | 20210101 – 20251231 |
+| `temp_2m_mean_c` | `FLOAT` | $^\circ\text{C}$ | YES | Nhiệt độ 2m trung bình ngày ($T_K - 273.15$) | $[-5.0, 50.0]$ |
+| `dewpoint_2m_mean_c` | `FLOAT` | $^\circ\text{C}$ | YES | Nhiệt độ điểm sương 2m trung bình ngày | $[-10.0, 40.0]$ |
+| `rh_mean_pct` | `FLOAT` | $\%$ | YES | Độ ẩm tương đối trung bình ngày từ Magnus-Tetens | $[0.0, 100.0]$ |
+| `precip_daily_mm` | `FLOAT` | mm | YES | Tổng lượng mưa ngày đã khử tích lũy giờ | $[0.0, 500.0]$ |
+| `wind_speed_scalar_ms`| `FLOAT` | $\text{m}/\text{s}$ | YES | Tốc độ gió tức thời trung bình ngày $V_{\text{scalar}}$ | $[0.0, 35.0]$ |
+| `wind_persistence` | `FLOAT` | Tỷ số | YES | Độ bền vững hướng gió $P = V_{\text{vector}} / V_{\text{scalar}}$ | $[0.0, 1.0]$ |
+| `surface_pressure_hpa`| `FLOAT` | hPa | YES | Khí áp bề mặt trung bình ngày ($sp / 100.0$) | $[900.0, 1050.0]$ |
+| `blh_mean_m` | `FLOAT` | Mét | YES | Chiều cao lớp biên PBLH trung bình ngày từ ERA5 | $[10.0, 4000.0]$ |
+| `blh_min_m` | `FLOAT` | Mét | YES | Chiều cao lớp biên nhỏ nhất trong ngày (nghịch nhiệt đêm) | $[10.0, 2000.0]$ |
 
-### 5.6. Kế hoạch Thực hiện Từng bước của TV3
-- **Bước 1:** Viết script `src/ingest/fetch_era5_native.py` kết nối CDS API tải chuỗi giờ của ~45 pixel ERA5-Land và ~8 pixel BLH.
-- **Bước 2:** Viết script `src/features/process_meteo_daily.py` khử tích lũy mưa, tính gió vô hướng và tính độ ẩm $RH$. Xuất `stg_meteo_daily.parquet` để đối soát và chuẩn bị cho Feature Mart.
-- **Bước 3:** Thử nghiệm thuật toán nội suy Nearest Neighbor và Bilinear trên 1 ngày mẫu sang 3.610 ô lưới. Báo cáo đối soát cho Data Architect (`ngthinh06`).
-- **Bước 4:** Broadcast toàn bộ 5 năm sang 3.610 ô lưới và xuất file `fct_grid_meteo_daily.parquet`.
+### 5.7. Hướng dẫn Vận hành, Cài đặt & Chạy Thử nghiệm (Runbook)
+
+#### 1. Cài đặt Thư viện Phụ thuộc (Dependencies)
+```bash
+# Cài đặt thư viện kết nối CDS API (chỉ cần khi tải thật từ Copernicus)
+pip install cdsapi xarray netCDF4
+```
+
+#### 2. Cấu hình Tài khoản Copernicus CDS (Không in/commit Secret)
+Đăng ký tài khoản miễn phí tại [Copernicus Climate Data Store](https://cds.climate.copernicus.eu/).
+Tạo tệp `~/.cdsapirc` trên máy cá nhân (hoặc cấu hình biến môi trường):
+```ini
+url: https://cds.climate.copernicus.eu/api
+key: <your-personal-cds-api-key>
+```
+> [!CAUTION]
+> Tuyệt đối không commit tệp `.cdsapirc` hoặc in token/API key vào log/mã nguồn Git!
+
+#### 3. Lệnh Chạy Thử Mẫu (Sample / Sandbox Run) Không Gọi CDS Thật
+Sử dụng cờ `--mock` để kiểm thử toàn diện toàn bộ pipeline mà không cần kết nối mạng hoặc credentials:
+```bash
+# Bước A: Ingest mẫu 1 tháng vào thư mục sandbox
+python run.py meteo-ingest --dataset all --start-year 2021 --end-year 2021 --month 1 --output-dir .test_sandbox/raw --manifest-path .test_sandbox/manifest.json --mock
+
+# Bước B: Xử lý Staging và Ánh xạ Fact 1km (chạy thử an toàn không ghi đè Lakehouse)
+python run.py meteo-process --raw-dir .test_sandbox/raw --stg-output .test_sandbox/stg_meteo_daily.parquet --fct-output .test_sandbox/fct_grid_meteo_daily.parquet --method nearest
+```
+
+#### 4. Lệnh Hướng dẫn Vận hành Toàn bộ 5 Năm (Chỉ dành cho TV3 khi đã sẵn sàng tải thật)
+> [!NOTE]
+> Không tự ý chạy các lệnh dưới đây khi chưa có sự phê duyệt chính thức từ Data Architect.
+```bash
+# 1. Thu thập toàn bộ 5 năm 2021-2025 từ CDS API (chia chunk theo tháng, có manifest theo dõi)
+python run.py meteo-ingest --dataset all --start-year 2021 --end-year 2025
+
+# 2. Xử lý chuẩn hóa và ánh xạ sang lưới 1km chính thức
+python run.py meteo-process --method nearest
+```
+
+#### 5. Kiểm tra Đối soát Chất lượng Kết quả
+```bash
+# Chạy bộ unit tests khí tượng
+python -m pytest tests/unit/test_meteo_pipeline.py -v
+
+# Kiểm tra linting ruff
+python -m ruff check src/ingest/fetch_era5_native.py src/features/process_meteo_daily.py tests/unit/test_meteo_pipeline.py run.py
+```
 
 ---
 

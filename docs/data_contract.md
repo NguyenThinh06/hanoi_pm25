@@ -64,6 +64,8 @@ Do độ lệch thời gian giữa UTC và Hà Nội là 7 giờ, ngày địa p
 1. **Quan trắc trạm mặt đất:**
    - Ngày đo hợp lệ bắt buộc phải có **$\text{valid\_hours\_count} \ge 18\text{ giờ}$** (có `qc_flag = 0`).
    - Fact giữ tất cả trạm–ngày có bản ghi. Ngày có dưới 18 giờ sạch mang `is_valid_day = 0`; không có giờ sạch thì `pm25_raw_mean = NULL`.
+   - Bảng train dự kiến chọn `pm25_raw_mean IS NOT NULL`, kể cả ngày dưới 18 giờ; không đưa `valid_hours_count` và `is_valid_day` vào tập train. Có thể nối lại fact theo `(station_id, date_id)` khi đánh giá chất lượng nhãn.
+   - Train và estimate dự kiến nối `dim_date` theo `date_id` để lấy `month`, `day_of_week`, `is_weekend`, `hanoi_season`; không dùng `is_crop_burning_window` làm đầu vào mô hình. Quy tắc này chưa được thực thi vì các mart chưa được xây dựng.
 2. **Khí tượng ERA5-Land & BLH:**
    - Lượng mưa: Phải khử tích lũy chuỗi giờ trước: $\text{precip\_h} = \max(0.0, \text{tp}_h - \text{tp}_{h-1})$. Sau đó tính tổng lượng mưa 24 giờ của ngày địa phương: $\text{precip\_daily\_mm} = \sum_{h=1}^{24} \text{precip\_h}$.
    - Tốc độ gió: Tính vận tốc tức thời từng giờ $w_h = \sqrt{u_{10,h}^2 + v_{10,h}^2}$, sau đó lấy trung bình vô hướng 24h: $V_{\text{scalar}} = \frac{1}{24}\sum_{h=1}^{24} w_h$.
@@ -85,8 +87,8 @@ Hệ thống thiết lập sự phân biệt rạch ròi giữa 3 trạng thái 
    - **Xử lý:** Tuyệt đối không được thay thế bằng giá trị `0` hay số âm (`-999`, `-1`) trong các cột số đo.
 2. **Quan trắc bị loại bỏ qua Kiểm soát Chất lượng (QC Flagged / Rejected):**
    - Xảy ra khi thiết bị ghi nhận số liệu nhưng vi phạm các điều kiện kỹ thuật (số âm vô lý, vượt ngưỡng vật lý $> 1.000\,\mu\text{g}/\text{m}^3$, kẹt cảm biến flatline $\ge 6\text{h}$, hoặc ngoại lai Hampel).
-   - **Xử lý ở Staging:** Giữ nguyên bản ghi chuỗi giờ, gắn cờ `qc_flag > 0` và `is_hampel_outlier = 1`.
-   - **Xử lý ở Core/Fact:** Loại giờ bị gắn cờ khỏi phép tính trung bình; giữ ngày trạm và gắn cờ đủ 18 giờ.
+   - **Xử lý ở Staging hourly:** Giữ bản ghi sau chuẩn hóa, chưa gắn cờ QC.
+   - **Khi tạo daily:** Tính QC theo sensor–giờ trong bộ nhớ; loại giờ có `qc_flag > 0` khỏi phép tính trung bình. Hampel là cờ chẩn đoán độc lập và không tự loại giờ; giữ ngày trạm và gắn cờ đủ 18 giờ.
 3. **Giá trị đo bằng 0 thực tế (True Zero Measurement):**
    - Xảy ra khi hiện tượng tự nhiên bằng không (ví dụ ngày hoàn toàn không có mưa `precip_daily_mm = 0.0`, tốc độ gió lặng `wind_speed_scalar_ms = 0.0`).
    - **Biểu diễn:** Lưu trữ chính xác số `0.0`.

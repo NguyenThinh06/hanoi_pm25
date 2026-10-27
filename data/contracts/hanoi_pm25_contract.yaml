@@ -519,6 +519,11 @@ qualityAssertions:
 # ==============================================================================
 machineLearningGuardrails:
   targetVariable: "pm25_raw_mean" # Nhan thu nghiem; can danh gia chat luong sensor truoc khi train.
+  labelSelection: "pm25_raw_mean IS NOT NULL; khong loc theo nguong 18 gio"
+  temporalFeatures: ["month", "day_of_week", "is_weekend", "hanoi_season"]
+  excludedTemporalFeatures: ["is_crop_burning_window"]
+  excludedTrainingColumns: ["valid_hours_count", "is_valid_day"]
+  featureSelectionStatus: "planned_not_implemented"
   targetUnits: "ug/m3"
   evaluationScheme: "Grouped Spatial K-Fold Cross-Validation"
   cvSpatialParameters:
