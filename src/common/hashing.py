@@ -38,7 +38,8 @@ def append_idempotent_raw_parquet(
 
     # Đọc tập hợp hash đã tồn tại bằng DuckDB siêu nhanh
     con = duckdb.connect()
-    existing_hashes = set(con.execute(f"SELECT {hash_col} FROM '{target_path}'").fetchall())
+    sql_path = target_path.replace("\\", "/")
+    existing_hashes = con.sql(f"SELECT {hash_col} FROM '{sql_path}'").fetchall()
     existing_hash_set = {h[0] for h in existing_hashes}
 
     # Lọc các dòng chưa từng xuất hiện

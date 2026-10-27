@@ -1,0 +1,25 @@
+# Reproduction environment for the grid/date dimensions and their CI checks.
+certifi==2026.10.23
+colorama==0.4.6
+duckdb==2.0.0
+geopandas==1.2.0
+iniconfig==2.3.1
+numpy==2.5.4
+packaging==26.3
+pandas==3.1.0
+pluggy==1.7.0
+polars==2.1.0
+polars-runtime-32==2.1.0
+pyarrow==26.0.0
+Pygments==2.21.0
+pyogrio==0.13.0
+pyproj==3.8.0
+pytest==9.1.1
+python-dateutil==3.0.0
+ruff==0.17.2
+shapely==2.2.0
+six==1.17.0
+tzdata==2026.5
+python-dotenv>=1.0.0
+PyYAML>=6.0.1
+requests>=2.31.0

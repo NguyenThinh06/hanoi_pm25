@@ -9,12 +9,12 @@ from datetime import date, timedelta
 import polars as pl
 
 from src.common.io_parquet import atomic_write_parquet
+from src.common.spine_contract import DATE_END, DATE_START, DATE_UNKNOWN, REAL_DAYS
 
 
-def build_dim_date():
-    target_path = "data/core/dim_date.parquet"
-    start_date = date(2021, 1, 1)
-    end_date = date(2025, 12, 31)
+def build_dim_date(target_path="data/core/dim_date.parquet"):
+    start_date = DATE_START
+    end_date = DATE_END
 
     cur = start_date
     records = []
@@ -51,7 +51,7 @@ def build_dim_date():
 
     # 2. Them dong ngoai le date_id = -1
     records.append({
-        "date_id": -1,
+        "date_id": DATE_UNKNOWN,
         "date_actual": date(1970, 1, 1),
         "year": -1,
         "month": -1,
@@ -62,9 +62,17 @@ def build_dim_date():
         "is_crop_burning_window": 0
     })
 
-    df = pl.DataFrame(records)
+    df = pl.DataFrame(records).with_columns(pl.col("date_id").cast(pl.Int32))
+    real = df.filter(pl.col("date_id") != DATE_UNKNOWN)
+    if (len(df) != REAL_DAYS + 1 or len(real) != REAL_DAYS
+            or df["date_id"].n_unique() != len(df)
+            or real["date_actual"].to_list() != [
+                DATE_START + timedelta(days=i) for i in range(REAL_DAYS)
+            ]):
+        raise ValueError("Daily dimension violates the spine contract")
     atomic_write_parquet(df, target_path)
     print(f"[DATE] Successfully generated {len(df)} rows at {target_path} (Expected: 1827 rows).")
+    return df
 
 
 if __name__ == "__main__":

@@ -1,0 +1,32 @@
+{
+  "utc_v1__openaq_18__sensor_37__2022_04": {
+    "station_id": "openaq_18",
+    "sensor_id": 37,
+    "year": 2022,
+    "month": 4,
+    "status": "EMPTY",
+    "records_count": 0,
+    "updated_at": "2026-10-27T09:15:03.761733+00:00",
+    "error_message": ""
+  },
+  "utc_v1__openaq_7441__sensor_21632__2022_04": {
+    "station_id": "openaq_7441",
+    "sensor_id": 21632,
+    "year": 2022,
+    "month": 4,
+    "status": "SUCCESS",
+    "records_count": 696,
+    "updated_at": "2026-10-27T09:15:06.361344+00:00",
+    "error_message": ""
+  },
+  "utc_v1__openaq_307169__sensor_1742521__2022_04": {
+    "station_id": "openaq_307169",
+    "sensor_id": 1742521,
+    "year": 2022,
+    "month": 4,
+    "status": "EMPTY",
+    "records_count": 0,
+    "updated_at": "2026-10-27T09:15:06.670201+00:00",
+    "error_message": ""
+  }
+}

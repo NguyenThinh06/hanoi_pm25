@@ -1,0 +1,739 @@
+{
+  "source": "openaq_locations_bbox",
+  "fetched_at_utc": "2026-10-27T05:02:41.033902+00:00",
+  "catalog_complete": "not_verified",
+  "scope": "bbox, not polygon-filtered; embedded location sensor lists only",
+  "sensors": [
+    {
+      "station_id": "openaq_18",
+      "sensor_id": 37,
+      "parameter": "pm25",
+      "sensor_tier": "Unknown",
+      "classification_source": null,
+      "source_sensor_metadata": {
+        "id": 37,
+        "name": "pm25 µg/m³",
+        "parameter": {
+          "id": 2,
+          "name": "pm25",
+          "units": "µg/m³",
+          "displayName": "PM2.5"
+        }
+      }
+    },
+    {
+      "station_id": "openaq_2539",
+      "sensor_id": 5049,
+      "parameter": "pm25",
+      "sensor_tier": "Unknown",
+      "classification_source": null,
+      "source_sensor_metadata": {
+        "id": 5049,
+        "name": "pm25 µg/m³",
+        "parameter": {
+          "id": 2,
+          "name": "pm25",
+          "units": "µg/m³",
+          "displayName": "PM2.5"
+        }
+      }
+    },
+    {
+      "station_id": "openaq_7441",
+      "sensor_id": 21632,
+      "parameter": "pm25",
+      "sensor_tier": "Unknown",
+      "classification_source": null,
+      "source_sensor_metadata": {
+        "id": 21632,
+        "name": "pm25 µg/m³",
+        "parameter": {
+          "id": 2,
+          "name": "pm25",
+          "units": "µg/m³",
+          "displayName": "PM2.5"
+        }
+      }
+    },
+    {
+      "station_id": "openaq_307169",
+      "sensor_id": 1742521,
+      "parameter": "pm25",
+      "sensor_tier": "Unknown",
+      "classification_source": null,
+      "source_sensor_metadata": {
+        "id": 1742521,
+        "name": "pm25 µg/m³",
+        "parameter": {
+          "id": 2,
+          "name": "pm25",
+          "units": "µg/m³",
+          "displayName": "PM2.5"
+        }
+      }
+    },
+    {
+      "station_id": "openaq_1285357",
+      "sensor_id": 6566240,
+      "parameter": "pm25",
+      "sensor_tier": "Unknown",
+      "classification_source": null,
+      "source_sensor_metadata": {
+        "id": 6566240,
+        "name": "pm25 µg/m³",
+        "parameter": {
+          "id": 2,
+          "name": "pm25",
+          "units": "µg/m³",
+          "displayName": "PM2.5"
+        }
+      }
+    },
+    {
+      "station_id": "openaq_2161290",
+      "sensor_id": 7772012,
+      "parameter": "pm25",
+      "sensor_tier": "Unknown",
+      "classification_source": null,
+      "source_sensor_metadata": {
+        "id": 7772012,
+        "name": "pm25 µg/m³",
+        "parameter": {
+          "id": 2,
+          "name": "pm25",
+          "units": "µg/m³",
+          "displayName": "PM2.5"
+        }
+      }
+    },
+    {
+      "station_id": "openaq_2161291",
+      "sensor_id": 7772023,
+      "parameter": "pm25",
+      "sensor_tier": "Unknown",
+      "classification_source": null,
+      "source_sensor_metadata": {
+        "id": 7772023,
+        "name": "pm25 µg/m³",
+        "parameter": {
+          "id": 2,
+          "name": "pm25",
+          "units": "µg/m³",
+          "displayName": "PM2.5"
+        }
+      }
+    },
+    {
+      "station_id": "openaq_2161292",
+      "sensor_id": 7772032,
+      "parameter": "pm25",
+      "sensor_tier": "Unknown",
+      "classification_source": null,
+      "source_sensor_metadata": {
+        "id": 7772032,
+        "name": "pm25 µg/m³",
+        "parameter": {
+          "id": 2,
+          "name": "pm25",
+          "units": "µg/m³",
+          "displayName": "PM2.5"
+        }
+      }
+    },
+    {
+      "station_id": "openaq_2161293",
+      "sensor_id": 7772046,
+      "parameter": "pm25",
+      "sensor_tier": "Unknown",
+      "classification_source": null,
+      "source_sensor_metadata": {
+        "id": 7772046,
+        "name": "pm25 µg/m³",
+        "parameter": {
+          "id": 2,
+          "name": "pm25",
+          "units": "µg/m³",
+          "displayName": "PM2.5"
+        }
+      }
+    },
+    {
+      "station_id": "openaq_2161294",
+      "sensor_id": 7772104,
+      "parameter": "pm25",
+      "sensor_tier": "Unknown",
+      "classification_source": null,
+      "source_sensor_metadata": {
+        "id": 7772104,
+        "name": "pm25 µg/m³",
+        "parameter": {
+          "id": 2,
+          "name": "pm25",
+          "units": "µg/m³",
+          "displayName": "PM2.5"
+        }
+      }
+    },
+    {
+      "station_id": "openaq_2161295",
+      "sensor_id": 7771992,
+      "parameter": "pm25",
+      "sensor_tier": "Unknown",
+      "classification_source": null,
+      "source_sensor_metadata": {
+        "id": 7771992,
+        "name": "pm25 µg/m³",
+        "parameter": {
+          "id": 2,
+          "name": "pm25",
+          "units": "µg/m³",
+          "displayName": "PM2.5"
+        }
+      }
+    },
+    {
+      "station_id": "openaq_2161296",
+      "sensor_id": 7772040,
+      "parameter": "pm25",
+      "sensor_tier": "Unknown",
+      "classification_source": null,
+      "source_sensor_metadata": {
+        "id": 7772040,
+        "name": "pm25 µg/m³",
+        "parameter": {
+          "id": 2,
+          "name": "pm25",
+          "units": "µg/m³",
+          "displayName": "PM2.5"
+        }
+      }
+    },
+    {
+      "station_id": "openaq_2161297",
+      "sensor_id": 7771980,
+      "parameter": "pm25",
+      "sensor_tier": "Unknown",
+      "classification_source": null,
+      "source_sensor_metadata": {
+        "id": 7771980,
+        "name": "pm25 µg/m³",
+        "parameter": {
+          "id": 2,
+          "name": "pm25",
+          "units": "µg/m³",
+          "displayName": "PM2.5"
+        }
+      }
+    },
+    {
+      "station_id": "openaq_2161298",
+      "sensor_id": 7772025,
+      "parameter": "pm25",
+      "sensor_tier": "Unknown",
+      "classification_source": null,
+      "source_sensor_metadata": {
+        "id": 7772025,
+        "name": "pm25 µg/m³",
+        "parameter": {
+          "id": 2,
+          "name": "pm25",
+          "units": "µg/m³",
+          "displayName": "PM2.5"
+        }
+      }
+    },
+    {
+      "station_id": "openaq_2161299",
+      "sensor_id": 7771996,
+      "parameter": "pm25",
+      "sensor_tier": "Unknown",
+      "classification_source": null,
+      "source_sensor_metadata": {
+        "id": 7771996,
+        "name": "pm25 µg/m³",
+        "parameter": {
+          "id": 2,
+          "name": "pm25",
+          "units": "µg/m³",
+          "displayName": "PM2.5"
+        }
+      }
+    },
+    {
+      "station_id": "openaq_2161300",
+      "sensor_id": 7771988,
+      "parameter": "pm25",
+      "sensor_tier": "Unknown",
+      "classification_source": null,
+      "source_sensor_metadata": {
+        "id": 7771988,
+        "name": "pm25 µg/m³",
+        "parameter": {
+          "id": 2,
+          "name": "pm25",
+          "units": "µg/m³",
+          "displayName": "PM2.5"
+        }
+      }
+    },
+    {
+      "station_id": "openaq_2161301",
+      "sensor_id": 7772073,
+      "parameter": "pm25",
+      "sensor_tier": "Unknown",
+      "classification_source": null,
+      "source_sensor_metadata": {
+        "id": 7772073,
+        "name": "pm25 µg/m³",
+        "parameter": {
+          "id": 2,
+          "name": "pm25",
+          "units": "µg/m³",
+          "displayName": "PM2.5"
+        }
+      }
+    },
+    {
+      "station_id": "openaq_2161302",
+      "sensor_id": 7771977,
+      "parameter": "pm25",
+      "sensor_tier": "Unknown",
+      "classification_source": null,
+      "source_sensor_metadata": {
+        "id": 7771977,
+        "name": "pm25 µg/m³",
+        "parameter": {
+          "id": 2,
+          "name": "pm25",
+          "units": "µg/m³",
+          "displayName": "PM2.5"
+        }
+      }
+    },
+    {
+      "station_id": "openaq_2161303",
+      "sensor_id": 7772038,
+      "parameter": "pm25",
+      "sensor_tier": "Unknown",
+      "classification_source": null,
+      "source_sensor_metadata": {
+        "id": 7772038,
+        "name": "pm25 µg/m³",
+        "parameter": {
+          "id": 2,
+          "name": "pm25",
+          "units": "µg/m³",
+          "displayName": "PM2.5"
+        }
+      }
+    },
+    {
+      "station_id": "openaq_2161304",
+      "sensor_id": 7772096,
+      "parameter": "pm25",
+      "sensor_tier": "Unknown",
+      "classification_source": null,
+      "source_sensor_metadata": {
+        "id": 7772096,
+        "name": "pm25 µg/m³",
+        "parameter": {
+          "id": 2,
+          "name": "pm25",
+          "units": "µg/m³",
+          "displayName": "PM2.5"
+        }
+      }
+    },
+    {
+      "station_id": "openaq_2161305",
+      "sensor_id": 7772053,
+      "parameter": "pm25",
+      "sensor_tier": "Unknown",
+      "classification_source": null,
+      "source_sensor_metadata": {
+        "id": 7772053,
+        "name": "pm25 µg/m³",
+        "parameter": {
+          "id": 2,
+          "name": "pm25",
+          "units": "µg/m³",
+          "displayName": "PM2.5"
+        }
+      }
+    },
+    {
+      "station_id": "openaq_2161306",
+      "sensor_id": 7772087,
+      "parameter": "pm25",
+      "sensor_tier": "Unknown",
+      "classification_source": null,
+      "source_sensor_metadata": {
+        "id": 7772087,
+        "name": "pm25 µg/m³",
+        "parameter": {
+          "id": 2,
+          "name": "pm25",
+          "units": "µg/m³",
+          "displayName": "PM2.5"
+        }
+      }
+    },
+    {
+      "station_id": "openaq_2161307",
+      "sensor_id": 7771998,
+      "parameter": "pm25",
+      "sensor_tier": "Unknown",
+      "classification_source": null,
+      "source_sensor_metadata": {
+        "id": 7771998,
+        "name": "pm25 µg/m³",
+        "parameter": {
+          "id": 2,
+          "name": "pm25",
+          "units": "µg/m³",
+          "displayName": "PM2.5"
+        }
+      }
+    },
+    {
+      "station_id": "openaq_2161308",
+      "sensor_id": 7772088,
+      "parameter": "pm25",
+      "sensor_tier": "Unknown",
+      "classification_source": null,
+      "source_sensor_metadata": {
+        "id": 7772088,
+        "name": "pm25 µg/m³",
+        "parameter": {
+          "id": 2,
+          "name": "pm25",
+          "units": "µg/m³",
+          "displayName": "PM2.5"
+        }
+      }
+    },
+    {
+      "station_id": "openaq_2161309",
+      "sensor_id": 7772016,
+      "parameter": "pm25",
+      "sensor_tier": "Unknown",
+      "classification_source": null,
+      "source_sensor_metadata": {
+        "id": 7772016,
+        "name": "pm25 µg/m³",
+        "parameter": {
+          "id": 2,
+          "name": "pm25",
+          "units": "µg/m³",
+          "displayName": "PM2.5"
+        }
+      }
+    },
+    {
+      "station_id": "openaq_2161310",
+      "sensor_id": 7772109,
+      "parameter": "pm25",
+      "sensor_tier": "Unknown",
+      "classification_source": null,
+      "source_sensor_metadata": {
+        "id": 7772109,
+        "name": "pm25 µg/m³",
+        "parameter": {
+          "id": 2,
+          "name": "pm25",
+          "units": "µg/m³",
+          "displayName": "PM2.5"
+        }
+      }
+    },
+    {
+      "station_id": "openaq_2161311",
+      "sensor_id": 7772076,
+      "parameter": "pm25",
+      "sensor_tier": "Unknown",
+      "classification_source": null,
+      "source_sensor_metadata": {
+        "id": 7772076,
+        "name": "pm25 µg/m³",
+        "parameter": {
+          "id": 2,
+          "name": "pm25",
+          "units": "µg/m³",
+          "displayName": "PM2.5"
+        }
+      }
+    },
+    {
+      "station_id": "openaq_2161312",
+      "sensor_id": 7772037,
+      "parameter": "pm25",
+      "sensor_tier": "Unknown",
+      "classification_source": null,
+      "source_sensor_metadata": {
+        "id": 7772037,
+        "name": "pm25 µg/m³",
+        "parameter": {
+          "id": 2,
+          "name": "pm25",
+          "units": "µg/m³",
+          "displayName": "PM2.5"
+        }
+      }
+    },
+    {
+      "station_id": "openaq_2161313",
+      "sensor_id": 7772003,
+      "parameter": "pm25",
+      "sensor_tier": "Unknown",
+      "classification_source": null,
+      "source_sensor_metadata": {
+        "id": 7772003,
+        "name": "pm25 µg/m³",
+        "parameter": {
+          "id": 2,
+          "name": "pm25",
+          "units": "µg/m³",
+          "displayName": "PM2.5"
+        }
+      }
+    },
+    {
+      "station_id": "openaq_2161314",
+      "sensor_id": 7771972,
+      "parameter": "pm25",
+      "sensor_tier": "Unknown",
+      "classification_source": null,
+      "source_sensor_metadata": {
+        "id": 7771972,
+        "name": "pm25 µg/m³",
+        "parameter": {
+          "id": 2,
+          "name": "pm25",
+          "units": "µg/m³",
+          "displayName": "PM2.5"
+        }
+      }
+    },
+    {
+      "station_id": "openaq_2161315",
+      "sensor_id": 7772004,
+      "parameter": "pm25",
+      "sensor_tier": "Unknown",
+      "classification_source": null,
+      "source_sensor_metadata": {
+        "id": 7772004,
+        "name": "pm25 µg/m³",
+        "parameter": {
+          "id": 2,
+          "name": "pm25",
+          "units": "µg/m³",
+          "displayName": "PM2.5"
+        }
+      }
+    },
+    {
+      "station_id": "openaq_2161316",
+      "sensor_id": 7772020,
+      "parameter": "pm25",
+      "sensor_tier": "Unknown",
+      "classification_source": null,
+      "source_sensor_metadata": {
+        "id": 7772020,
+        "name": "pm25 µg/m³",
+        "parameter": {
+          "id": 2,
+          "name": "pm25",
+          "units": "µg/m³",
+          "displayName": "PM2.5"
+        }
+      }
+    },
+    {
+      "station_id": "openaq_2161317",
+      "sensor_id": 7772068,
+      "parameter": "pm25",
+      "sensor_tier": "Unknown",
+      "classification_source": null,
+      "source_sensor_metadata": {
+        "id": 7772068,
+        "name": "pm25 µg/m³",
+        "parameter": {
+          "id": 2,
+          "name": "pm25",
+          "units": "µg/m³",
+          "displayName": "PM2.5"
+        }
+      }
+    },
+    {
+      "station_id": "openaq_2161318",
+      "sensor_id": 7772036,
+      "parameter": "pm25",
+      "sensor_tier": "Unknown",
+      "classification_source": null,
+      "source_sensor_metadata": {
+        "id": 7772036,
+        "name": "pm25 µg/m³",
+        "parameter": {
+          "id": 2,
+          "name": "pm25",
+          "units": "µg/m³",
+          "displayName": "PM2.5"
+        }
+      }
+    },
+    {
+      "station_id": "openaq_2161319",
+      "sensor_id": 7771984,
+      "parameter": "pm25",
+      "sensor_tier": "Unknown",
+      "classification_source": null,
+      "source_sensor_metadata": {
+        "id": 7771984,
+        "name": "pm25 µg/m³",
+        "parameter": {
+          "id": 2,
+          "name": "pm25",
+          "units": "µg/m³",
+          "displayName": "PM2.5"
+        }
+      }
+    },
+    {
+      "station_id": "openaq_2161320",
+      "sensor_id": 7772059,
+      "parameter": "pm25",
+      "sensor_tier": "Unknown",
+      "classification_source": null,
+      "source_sensor_metadata": {
+        "id": 7772059,
+        "name": "pm25 µg/m³",
+        "parameter": {
+          "id": 2,
+          "name": "pm25",
+          "units": "µg/m³",
+          "displayName": "PM2.5"
+        }
+      }
+    },
+    {
+      "station_id": "openaq_2161321",
+      "sensor_id": 7772099,
+      "parameter": "pm25",
+      "sensor_tier": "Unknown",
+      "classification_source": null,
+      "source_sensor_metadata": {
+        "id": 7772099,
+        "name": "pm25 µg/m³",
+        "parameter": {
+          "id": 2,
+          "name": "pm25",
+          "units": "µg/m³",
+          "displayName": "PM2.5"
+        }
+      }
+    },
+    {
+      "station_id": "openaq_2161322",
+      "sensor_id": 7772079,
+      "parameter": "pm25",
+      "sensor_tier": "Unknown",
+      "classification_source": null,
+      "source_sensor_metadata": {
+        "id": 7772079,
+        "name": "pm25 µg/m³",
+        "parameter": {
+          "id": 2,
+          "name": "pm25",
+          "units": "µg/m³",
+          "displayName": "PM2.5"
+        }
+      }
+    },
+    {
+      "station_id": "openaq_2161323",
+      "sensor_id": 7772015,
+      "parameter": "pm25",
+      "sensor_tier": "Unknown",
+      "classification_source": null,
+      "source_sensor_metadata": {
+        "id": 7772015,
+        "name": "pm25 µg/m³",
+        "parameter": {
+          "id": 2,
+          "name": "pm25",
+          "units": "µg/m³",
+          "displayName": "PM2.5"
+        }
+      }
+    },
+    {
+      "station_id": "openaq_4946811",
+      "sensor_id": 13502150,
+      "parameter": "pm25",
+      "sensor_tier": "Unknown",
+      "classification_source": null,
+      "source_sensor_metadata": {
+        "id": 13502150,
+        "name": "pm25 µg/m³",
+        "parameter": {
+          "id": 2,
+          "name": "pm25",
+          "units": "µg/m³",
+          "displayName": "PM2.5"
+        }
+      }
+    },
+    {
+      "station_id": "openaq_4946812",
+      "sensor_id": 13502151,
+      "parameter": "pm25",
+      "sensor_tier": "Unknown",
+      "classification_source": null,
+      "source_sensor_metadata": {
+        "id": 13502151,
+        "name": "pm25 µg/m³",
+        "parameter": {
+          "id": 2,
+          "name": "pm25",
+          "units": "µg/m³",
+          "displayName": "PM2.5"
+        }
+      }
+    },
+    {
+      "station_id": "openaq_4946813",
+      "sensor_id": 13502154,
+      "parameter": "pm25",
+      "sensor_tier": "Unknown",
+      "classification_source": null,
+      "source_sensor_metadata": {
+        "id": 13502154,
+        "name": "pm25 µg/m³",
+        "parameter": {
+          "id": 2,
+          "name": "pm25",
+          "units": "µg/m³",
+          "displayName": "PM2.5"
+        }
+      }
+    },
+    {
+      "station_id": "openaq_6123215",
+      "sensor_id": 14581375,
+      "parameter": "pm25",
+      "sensor_tier": "Unknown",
+      "classification_source": null,
+      "source_sensor_metadata": {
+        "id": 14581375,
+        "name": "pm25 µg/m³",
+        "parameter": {
+          "id": 2,
+          "name": "pm25",
+          "units": "µg/m³",
+          "displayName": "PM2.5"
+        }
+      }
+    }
+  ]
+}
