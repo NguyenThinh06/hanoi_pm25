@@ -11,19 +11,19 @@
 **Ngày hiệu lực:** 2026-10-26  
 **Trạng thái phê duyệt:** TÀI LIỆU HƯỚNG DẪN CHUẨN HÓA DÀNH CHO CẢ 3 THÀNH VIÊN  
 **Tài liệu liên kết kiến trúc bắt buộc:**
-- [Đặc tả Lược đồ Dữ liệu (docs/schema.md)](./docs/schema.md)
-- [Hợp đồng Dữ liệu Tổng thể (docs/data_contract.md)](./docs/data_contract.md)
+- [Đặc tả Lược đồ Dữ liệu (docs/schema.md)](./schema.md)
+- [Hợp đồng Dữ liệu Tổng thể (docs/data_contract.md)](./data_contract.md)
 
 ---
 
 ## MỤC LỤC TỔNG THỂ
 
 1. [Tổng quan Kiến trúc, Múi giờ và Khung xương Bất biến Toàn dự án](#1-tổng-quan-kiến-trúc-múi-giờ-và-khung-xương-bất-biến-toàn-dự-án)
-2. [Ma trận Phân quyền & Điểm Giao thoa Liên thành viên (RACI & Handoff Matrix)](#2-ma-trận-phân-quyền--điểm-giao-thoa-liên-thành-viên-raci--handoff-matrix)
-3. [CẨM NANG DÀNH RIÊNG CHO THÀNH VIÊN 1: ngthinh06 (Lưới, Ngày, Trạm & Ground Truth)](#3-cẩm-nang-dành-riêng-cho-thành-viên-1-ngthinh06-lưới-ngày-trạm--ground-truth)
-4. [CẨM NANG DÀNH RIÊNG CHO THÀNH VIÊN 2: hunganh (Đặc trưng tĩnh Đô thị & Viễn thám Vệ tinh)](#4-cẩm-nang-dành-riêng-cho-thành-viên-2-hunganh-đặc-trưng-tĩnh-đô-thị--viễn-thám-vệ-tinh)
-5. [CẨM NANG DÀNH RIÊNG CHO THÀNH VIÊN 3: minh (Khí quyển ERA5-Land, BLH & Độ ẩm Tương đối)](#5-cẩm-nang-dành-riêng-cho-thành-viên-3-minh-khí-quyển-era5-land-blh--độ-ẩm-tương-đối)
-6. [Quy chuẩn Đóng gói Chợ Đặc trưng (Feature Marts) & Rào chắn Chống Rò rỉ Nhãn](#6-quy-chuẩn-đóng-gói-chợ-đặc-trưng-feature-marts--rào-chắn-chống-rò-rỉ-nhãn)
+2. [Ma trận Phân quyền & Điểm Giao thoa Liên thành viên (RACI & Handoff Matrix)](#2-ma-trận-phân-quyền-điểm-giao-thoa-liên-thành-viên-raci-handoff-matrix)
+3. [CẨM NANG DÀNH RIÊNG CHO THÀNH VIÊN 1: ngthinh06 (Lưới, Ngày, Trạm & Ground Truth)](#3-cẩm-nang-dành-riêng-cho-thành-viên-1-ngthinh06-lưới-ngày-trạm-ground-truth)
+4. [CẨM NANG DÀNH RIÊNG CHO THÀNH VIÊN 2: hunganh (Đặc trưng tĩnh Đô thị & Viễn thám Vệ tinh)](#4-cẩm-nang-dành-riêng-cho-thành-viên-2-hunganh-đặc-trưng-tĩnh-đô-thị-viễn-thám-vệ-tinh)
+5. [CẨM NANG DÀNH RIÊNG CHO THÀNH VIÊN 3: minh (Khí quyển ERA5-Land, BLH & Độ ẩm Tương đối)](#5-cẩm-nang-dành-riêng-cho-thành-viên-3-minh-khí-quyển-era5-land-blh-độ-ẩm-tương-đối)
+6. [Quy chuẩn Đóng gói Chợ Đặc trưng (Feature Marts) & Rào chắn Chống Rò rỉ Nhãn](#6-quy-chuẩn-đóng-gói-chợ-đặc-trưng-feature-marts-rào-chắn-chống-rò-rỉ-nhãn)
 7. [Quy trình Đồng bộ Mã nguồn Git, CI/CD và Cấu trúc Lưu trữ Google Drive](#7-quy-trình-đồng-bộ-mã-nguồn-git-cicd-và-cấu-trúc-lưu-trữ-google-drive)
 8. [Nhật ký Xử lý Mâu thuẫn Kiến trúc và Quyết định Cần Đồng thuận](#8-nhật-ký-xử-lý-mâu-thuẫn-kiến-trúc-và-quyết-định-cần-đồng-thuận)
 
@@ -67,14 +67,14 @@ Theo tệp kê khai chuẩn `data/manifests/grid_manifest.json` và provenance `
 | Khung runner `run.py`, CI/CD, Hàm băm & IO Parquet | **R / A** | C | C | Đã hoàn thành (v1.0) |
 | Ranh giới Hà Nội & Lưới 1km Spine (`dim_grid_1km` v1.0) | **R / A** | C | C | Đã đóng băng 3.611 dòng |
 | Trục ngày 5 năm (`dim_date`) | **R / A** | I | I | Đã đóng băng 1.827 dòng |
-| Danh mục trạm mặt đất (`dim_station`) | **R / A** | I | I | Đã hoàn thành (15 dòng) |
+| Danh mục trạm mặt đất (`dim_station`) | **R / A** | I | I | Đã hoàn thành (44 dòng: snapshot khảo sát 43 trạm trong bbox + 1 unknown) |
 | Ingest chuỗi giờ OpenAQ thô & Staging QC trạm | **R / A** | I | I | Đã hoàn thành |
-| Bảng Fact mặt đất ngày (`fct_ground_truth_daily`) | **R / A** | I | I | Đã hoàn thành ($\ge 18\text{h}$) |
+| Bảng Fact mặt đất ngày (`fct_ground_truth_daily`) | **R / A** | I | I | Giữ mọi ngày có bản ghi; gắn cờ đủ 18 giờ |
 | 15 Biến tĩnh đô thị (`dim_grid_1km` v1.1) | C | **R / A** | I | Đang thực hiện |
 | Ingest & Staging Viễn thám (MODIS, S5P, VIIRS) | I | **R / A** | C | Đang thực hiện |
 | Fact Viễn thám ô–ngày (`fct_grid_satellite_daily`) | C | **R / A** | I | Chờ TV2 xác nhận bàn giao |
 | Ingest & Staging Khí tượng (ERA5-Land, BLH) | I | C | **R / A** | Đang thực hiện |
-| Bảng độ ẩm $RH$ giải phóng nút thắt Köhler cho TV1 | I | I | **R / A** | **Giao điểm khẩn cấp** |
+| Bàn giao đặc trưng độ ẩm tương đối $RH$ (phục vụ Marts & nghiên cứu) | I | I | **R / A** | **Giao điểm phối hợp** |
 | Fact Khí tượng ô–ngày (`fct_grid_meteo_daily`) | C | I | **R / A** | Chờ TV3 xác nhận bàn giao |
 | Đóng gói Chợ Đặc trưng (`mart_grid_daily_features`) | C | **R / A** | C | Quy mô $6.591.860$ dòng |
 | Đóng gói Bảng Ghép trạm (`mart_station_matched`) | **R / A** | C | I | Tập nhãn huấn luyện ML |
@@ -91,7 +91,7 @@ flowchart LR
 
     TV1 -- "1. Bàn giao dim_grid_1km v1.0<br/>& dim_date.parquet" --> TV2
     TV1 -- "2. Bàn giao dim_grid_1km v1.0<br/>cho Native Pixel Mapping" --> TV3
-    TV3 -- "3. BÀN GIAO GẤP BẢNG RH<br/>(stg_meteo_daily) mở khóa Köhler" --> TV1
+    TV3 -- "3. Bàn giao stg_meteo_daily<br/>(kèm biến RH)" --> TV1
     TV2 -- "4. Bàn giao dim_grid_1km v1.1<br/>(đủ 15 biến tĩnh)" --> TV1
     TV2 -- "5. Bàn giao fct_grid_satellite_daily" --> TV1
     TV3 -- "6. Bàn giao fct_grid_meteo_daily" --> TV2
@@ -110,7 +110,7 @@ flowchart LR
   - Thu thập dữ liệu giờ thô OpenAQ (`src/ingest/fetch_ground_truth.py`), làm sạch chuỗi giờ (`src/features/qc_hourly_stations.py`) và tạo bảng Fact trạm ngày `fct_ground_truth_daily.parquet`.
   - Xây dựng bảng ghép nhãn huấn luyện `mart_station_matched.parquet`.
 - **Không phụ trách:** Thu thập ảnh vệ tinh MODIS/Sentinel-5P/VIIRS (của TV2); thu thập dữ liệu khí tượng ERA5-Land/BLH (của TV3); tính toán 15 biến tĩnh đô thị (của TV2).
-- **Phụ thuộc:** Chờ TV3 bàn giao bảng chuỗi giờ độ ẩm tương đối $RH$ (`stg_meteo_daily.parquet`) để kích hoạt công thức hiệu chỉnh ẩm $\kappa$-Köhler toàn diện cho các cảm biến Tier 2.
+- **Phụ thuộc:** Chưa có mô hình hiệu chỉnh đồng vị trí được nghiệm thu; staging daily và fact chỉ xuất PM2.5 thô sau QC. Nhóm ML sẽ quyết định nhãn huấn luyện; không tự áp dụng κ-Köhler hay giả định chỉ cần RH là đủ.
 
 ### 3.2. Danh sách Nguồn Dữ liệu TV1 Thu thập
 
@@ -133,52 +133,66 @@ flowchart LR
 - **Tài khoản & Hạn mức:** Cần `X-API-Key` đăng ký miễn phí trên OpenAQ Console. Giới hạn 60 requests/phút. Áp dụng Exponential Backoff khi gặp lỗi HTTP 429.
 - **Giấy phép:** OpenAQ Open Data License (CC BY 4.0).
 
-### 3.3. Quy trình Thu thập & Chống Trùng lặp của TV1
+### 3.3. Quy trình Thu thập, Khóa Đồng thời & Chống Trùng lặp của TV1
 1. **Kiểm toán trước danh mục trạm:** Chạy `python -m src.ingest.audit_stations` để quét toàn bộ trạm trong bbox, chuyển đổi tọa độ WGS84 sang `EPSG:3405` và xác định ô lưới `grid_id`. Kết quả lưu tại `data/reference/station_registry.json`.
 2. **Nạp phân đoạn (Chunking) theo Năm/Tháng:**
-   - Chia vòng lặp theo từng năm (`year=2021..2025`) và từng tháng (`month=01..12`).
-   - Với mỗi tháng, tải toàn bộ bản ghi giờ của các trạm trong danh mục kiểm toán.
-3. **Ghi lũy đẳng (Idempotent Append):**
-   - Tạo mã băm nội dung cho từng dòng: `_row_hash = SHA256(station_id | datetime_utc | pm25)`.
+   - Chia vòng lặp theo từng năm (`year=2021..2025`) và từng tháng (`month=01..12`). Hỗ trợ tham số `--month` hoặc `--start-month` và `--end-month` để cào/chạy lại riêng một khoảng tháng xác định.
+   - Tháng tải và phân vùng raw dùng UTC: từ đầu tháng (bao gồm) đến đầu tháng tiếp theo (không bao gồm). Ngày phân tích vẫn theo `Asia/Ho_Chi_Minh`.
+   - Để phủ đủ ngày Hà Nội 2021–2025, cần dữ liệu từ `2020-12-31T17:00:00Z` đến trước `2025-12-31T17:00:00Z`, nếu nguồn cung cấp; các năm mặc định 2021–2025 không bao gồm phần đầu kỳ này.
+   - Manifest `utc_v1` dùng khóa riêng, không coi trạng thái hoàn tất cũ theo tháng Hà Nội là hoàn tất tháng UTC.
+   - Với mỗi tháng, tải toàn bộ bản ghi giờ của các trạm trong danh mục kiểm toán qua phân trang. Chỉ khi mọi trang tải thành công mới kết luận hoàn thành; nếu gặp lỗi mạng, HTTP 404 hoặc response không hợp lệ (thiếu `results`), ném lỗi và đánh dấu `FAILED`.
+3. **Thứ tự Ghi An toàn & Mã Thoát Lỗi:**
+   - Ghi dữ liệu thành công vào file Parquet đích trước, sau đó mới cập nhật trạng thái `SUCCESS` vào manifest.
+   - Nếu có bất kỳ đơn vị sensor-tháng nào thất bại, CLI trả mã thoát khác 0 (`sys.exit(1)`) để CI/Scheduler cảnh báo kịp thời.
+4. **Khóa Tệp Đồng thời (Advisory Lock dựa trên PID Liveness):**
+   - Áp dụng `file_concurrency_lock` ghi PID vào `.parquet.lock`. Kiểm tra tiến trình sống (`is_process_alive`) trên cả Windows và Linux/macOS. Tuyệt đối không tự ý bẻ khóa nếu tiến trình giữ khóa vẫn đang hoạt động.
+   - *Giới hạn kỹ thuật:* Đây là khóa đơn máy, pipeline được thiết kế tối ưu cho quy trình chạy tuần tự (single-process / sequential); nghiêm cấm chạy song song đa tiến trình trên cùng một phân vùng tháng.
+5. **Ghi Lũy đẳng & Theo dõi Revision ($A \rightarrow B \rightarrow A$):**
+   - Tạo mã băm nội dung cho từng dòng: `_row_hash = SHA256(station_id | sensor_id | datetime_utc | value | parameter)`.
    - Lưu vào phân vùng Hive: `data/raw/ground_truth/source=openaq/year=YYYY/month=MM/data.parquet`.
-   - Dùng hàm `append_idempotent_raw_parquet()`: Kiểm tra nếu `_row_hash` đã tồn tại trong file đích thì bỏ qua; nếu có revision mới thì ghi nối mà không làm phình file.
+   - Hàm `append_idempotent_raw_parquet()` nhận diện bộ khóa nghiệp vụ `(station_id, sensor_id, datetime_utc)` và so khớp với phiên bản mới nhất hiện tại. Hỗ trợ đầy đủ các chuỗi revision nguồn cập nhật (kể cả khi giá trị quay về nội dung cũ $A \rightarrow B \rightarrow A$) mà không làm mất lịch sử và không gây trùng lặp khi chạy lại với `--force`.
 
 ### 3.4. Schema ở Từng Tầng do TV1 Phụ trách
 
 #### Tầng Raw: `data/raw/ground_truth/source=openaq/year=YYYY/month=MM/data.parquet`
-- **Hạt dữ liệu:** Trạm – Phép đo giờ UTC.
-- **Khóa nghiệp vụ:** `(station_id, datetime_utc)`.
+- **Hạt dữ liệu (Grain):** Trạm – Sensor – Phép đo giờ UTC.
+- **Khóa nghiệp vụ:** `(station_id, sensor_id, datetime_utc)`.
 - **Cấu trúc cột:**
   - `station_id` (`VARCHAR`, PK): Định danh trạm, ví dụ `'openaq_8422'`.
+  - `sensor_id` (`INT64` hoặc `VARCHAR`, PK): Định danh cảm biến vật lý.
   - `datetime_utc` (`VARCHAR`, PK): Chuỗi ISO-8601 UTC, ví dụ `'2021-01-01T00:00:00Z'`.
   - `datetime_local` (`VARCHAR`): Giờ Hà Nội, ví dụ `'2021-01-01T07:00:00+07:00'`.
-  - `pm25_ug_m3` (`DOUBLE`): Giá trị nồng độ thô ghi nhận từ sensor.
+  - `pm25_ug_m3` (`DOUBLE`): Giá trị nồng độ thô ghi nhận từ sensor (giữ nguyên kể cả âm hoặc NULL để staging kiểm toán).
   - `sensor_tier` (`VARCHAR`): `'Tier_1_Reference_FEM'` hoặc `'Tier_2_LowCost_Optical'`.
   - `grid_id` (`VARCHAR`, FK): Ô lưới chứa trạm, ví dụ `'grid_584000_2324000'`.
   - `ingested_at` (`VARCHAR`): Timestamp thời điểm nạp vào hệ thống.
   - `_row_hash` (`VARCHAR`): Mã băm SHA-256 nội dung dòng.
 
 #### Tầng Staging: `data/staging/stg_ground_truth_hourly.parquet`
-- **Hạt dữ liệu:** Trạm – Giờ làm sạch và gán cờ QC.
-- **Khóa chính:** `(station_id, datetime_utc)`.
+- **Hạt dữ liệu (Grain):** Trạm – Sensor – Giờ làm sạch và gán cờ QC.
+- **Khóa chính:** `(station_id, sensor_id, datetime_utc)`.
 - **Cấu trúc cột:** Toàn bộ cột của tầng Raw kèm:
-  - `qc_flag` (`INT32`, not null): Cờ phân tầng: `0` (Sạch), `1` (Âm $< 0$), `2` (Vượt ngưỡng $> 1.000\,\mu\text{g}/\text{m}^3$), `3` (Flatline kẹt cảm biến $\ge 6\text{h}$).
-  - `is_hampel_outlier` (`INT32`, not null): `1` nếu phát hiện ngoại lai qua bộ lọc Hampel ($window=7\text{h}, 3\sigma$), `0` nếu bình thường.
+  - `qc_flag` (`INT32`, not null): Cờ phân tầng: `0` (Sạch), `1` (Âm $< 0$, NaN, Inf, -Inf, Null, Timestamp hỏng), `2` (Vượt ngưỡng vật lý $> 1.000\,\mu\text{g}/\text{m}^3$), `3` (Flatline kẹt cảm biến liên tục thực tế $\ge 6\text{h}$).
+  - `is_hampel_outlier` (`INT32`, not null): `1` nếu phát hiện ngoại lai qua bộ lọc Hampel ($window=7\text{h}, 3\sigma$), `0` nếu bình thường (chẩn đoán độc lập, không loại giờ).
 
 #### Tầng Core Fact: `data/core/fct_ground_truth_daily.parquet`
-- **Hạt dữ liệu:** Trạm – Ngày ($\ge 18\text{h}$ hợp lệ).
+- **Hạt dữ liệu (Grain):** **Trạm – Ngày** có bản ghi giờ, kể cả ngày dưới 18 giờ sạch hoặc không có giờ sạch; chưa phải bảng nhãn ô–ngày.
 - **Khóa chính:** `(station_id, date_id)`.
-- **Khóa ngoại:** `station_id` $\rightarrow$ `dim_station`, `date_id` $\rightarrow$ `dim_date`, `grid_id` $\rightarrow$ `dim_grid_1km`.
-- **Cột:** `station_id`, `date_id`, `grid_id`, `valid_hours_count`, `pm25_raw_mean`, `pm25_calibrated_mean`, `pm25_daily_std`, `pm25_daily_min`, `pm25_daily_max`. (Chi tiết kiểu dữ liệu xem tại [docs/schema.md](./docs/schema.md#44-bảng-dữ-liệu-sự-kiện-quan-trắc-mặt-đất-hàng-ngày-fct_ground_truth_daily)).
+- **Khóa ngoại:** `station_id` $\rightarrow$ `dim_station`, `date_id` $\rightarrow$ `dim_date`, `grid_id` $\rightarrow$ `dim_grid_1km` (dùng để nối trạm với ô lưới 1km).
+- **Cột:** `station_id`, `date_id`, `grid_id`, `valid_hours_count`, `is_valid_day`, `pm25_raw_mean`, `pm25_daily_std`, `pm25_daily_min`, `pm25_daily_max`.
 
 ### 3.5. Quy tắc Biến đổi & Nghiệm thu của TV1
-- **Múi giờ:** Chuỗi giờ thô UTC phải cộng $7\text{ giờ}$ để xác định chính xác ngày địa phương Hà Nội: `date_id = CAST(STRFTIME(datetime_local, '%Y%m%d') AS INT32)`.
-- **Quy tắc $\ge 18\text{h}$ hợp lệ:**
-  - Chỉ tính toán trung bình ngày trên các giờ có `qc_flag = 0`.
-  - Nếu $\text{valid\_hours\_count} < 18\text{ giờ}$, ngày đo đó chỉ được lưu tại `stg_ground_truth_daily.parquet` với `is_valid_day = 0` và **bị loại bỏ hoàn toàn khỏi `fct_ground_truth_daily.parquet`**.
-- **Hiệu chỉnh $\kappa$-Köhler:**
-  - Với trạm Tier 1 FEM (Sứ quán Mỹ): `pm25_calibrated_mean = pm25_raw_mean`.
-  - Với trạm Tier 2 (PAM Air): Khi nhận được chuỗi $RH$ từ TV3, áp dụng công thức Köhler với $\kappa = 0.35$ khi $RH > 70\%$ để giảm trừ sai số do sol khí hút ẩm.
+- **Múi giờ:** Chuỗi giờ thô UTC được chuyển đổi chính xác sang ngày địa phương Hà Nội (`Asia/Ho_Chi_Minh`): `date_id = CAST(STRFTIME(datetime_local, '%Y%m%d') AS INT32)`.
+- **Tiền hợp nhất cấp giờ (Hourly Consolidation):**
+  - Trước khi tính trung bình ngày, các phép đo trong cùng 1 giờ của 1 trạm được gom nhóm lại thành 1 giờ duy nhất. Mỗi giờ hợp lệ đóng góp đúng trọng số $1/N$ vào trung bình ngày.
+  - Nếu trạm có nhiều sensor cùng đo trong giờ, giá trị giờ là trung bình các sensor sạch; không tự ý ưu tiên loại bỏ sensor nào khi chưa có nghiên cứu đồng vị trí.
+- **Quy tắc Quality Gate $\ge 18\text{h}$ hợp lệ:**
+  - Ngưỡng $\ge 18$ tính trên số giờ duy nhất trong ngày có `qc_flag = 0` và giá trị hữu hạn.
+  - Staging giữ mọi ngày có bản ghi giờ; fact giữ các ngày trong phạm vi 2021–2025. Ngày dưới 18 giờ có `is_valid_day = 0`; nếu không có giờ sạch thì `pm25_raw_mean = NULL`. Lọc nhãn huấn luyện là quyết định riêng.
+- **Ngữ nghĩa hiệu chuẩn PM2.5:**
+  - Chưa có phương pháp hiệu chỉnh được nghiệm thu trong repository; không xuất cột PM2.5 hiệu chỉnh trong staging daily hoặc fact.
+  - Tuyệt đối không tự ý gán giá trị thô thành "đã hiệu chỉnh", không tự áp dụng công thức $\kappa$-Köhler khi chưa có mô hình được duyệt. Toàn bộ `pm25_raw_mean` được bảo tồn nguyên vẹn làm cơ sở đối chuẩn.
+  - Bảng nhãn cấp ô–ngày và ma trận ghép đặc trưng `mart_station_matched.parquet` là các dataset dự kiến ở giai đoạn sau.
 
 ### 3.6. Bảng Đầu ra Bàn giao của TV1
 
@@ -186,16 +200,13 @@ flowchart LR
 | :--- | :--- | :--- | :--- | :---: |
 | `dim_grid_1km.parquet` (v1.0) | `data/core/` | Ô vuông 1km | Đúng 3.611 dòng | **Đã hoàn thành** |
 | `dim_date.parquet` | `data/core/` | Ngày lịch | Đúng 1.827 dòng | **Đã hoàn thành** |
-| `dim_station.parquet` | `data/core/` | Trạm quan trắc | Đúng 15 dòng | **Đã hoàn thành** |
-| `fct_ground_truth_daily.parquet` | `data/core/` | Trạm – Ngày | Phụ thuộc số ngày $\ge 18\text{h}$ | **Đã hoàn thành** |
+| `dim_station.parquet` | `data/core/` | Trạm quan trắc | 44 dòng (snapshot khảo sát: 43 trạm trong bbox + 1 unknown; không cố định cứng) | **Đã hoàn thành** |
+| `fct_ground_truth_daily.parquet` | `data/core/` | Trạm – Ngày | Mọi ngày có bản ghi giờ | **Giữ cờ chất lượng 18 giờ** |
 
-*Minh họa một số dòng dữ liệu thực tế bàn giao từ `fct_ground_truth_daily.parquet`:*
+*Ví dụ minh họa cấu trúc fact (không phải dữ liệu thực tế):*
 ```
-station_id      | date_id  | grid_id              | valid_hours_count | pm25_raw_mean | pm25_calibrated_mean
-----------------+----------+----------------------+-------------------+---------------+---------------------
-openaq_8422     | 20210101 | grid_584000_2324000  | 24                | 68.42         | 68.42
-openaq_8422     | 20210102 | grid_584000_2324000  | 23                | 84.15         | 84.15
-openaq_8425     | 20210101 | grid_588000_2327000  | 21                | 55.30         | 42.10
+station_id      | date_id  | grid_id              | valid_hours_count | pm25_raw_mean
+openaq_example  | 20210101 | grid_584000_2324000  | 24                | 68.42
 ```
 
 ---
@@ -315,7 +326,7 @@ openaq_8425     | 20210101 | grid_588000_2327000  | 21                | 55.30   
   - Kết nối Copernicus Climate Data Store (CDS API) và GEE khí quyển.
   - Tải chuỗi giờ tái phân tích khí tượng ERA5-Land (~9km) và Chiều cao lớp biên ERA5 BLH (~31km).
   - Áp dụng thuật toán khử tích lũy lượng mưa giờ, tính vận tốc gió vô hướng $V_{\text{scalar}}$, tỷ số bền vững gió $P$, và độ ẩm tương đối $RH$ (Magnus-Tetens).
-  - **Nhiệm vụ bàn giao khẩn cấp:** Xuất bản `stg_meteo_daily.parquet` bàn giao ngay cho TV1 để mở khóa hiệu chỉnh ẩm Köhler cho trạm mặt đất.
+  - **Bàn giao Staging Khí tượng:** Xuất bản `stg_meteo_daily.parquet` (kèm cột `rh_mean_pct`) phục vụ đối soát và tích hợp vào Feature Mart.
   - Nội suy và broadcast khí tượng từ pixel gốc sang 3.610 ô lưới, đóng gói `fct_grid_meteo_daily.parquet`.
 - **Không phụ trách:** Viễn thám MODIS/S5P/VIIRS (của TV2); dữ liệu trạm OpenAQ (của TV1); biến tĩnh đô thị (của TV2).
 - **Phụ thuộc:**
@@ -384,7 +395,7 @@ Sau đó tính trung bình 24 giờ của ngày địa phương Hà Nội để 
 - **Hạt dữ liệu:** Pixel gốc ERA5 – Ngày địa phương.
 - **Khóa chính:** `(pixel_id, date_id)`.
 - **Ý nghĩa:** Chứa các trường nhiệt độ, độ ẩm, gió, lượng mưa và BLH trước khi broadcast sang lưới 1km.
-- **Yêu cầu then chốt:** Cung cấp cột `rh_mean_pct` để TV1 tra cứu hiệu chỉnh trạm Tier 2.
+- **Yêu cầu then chốt:** Cung cấp cột `rh_mean_pct` phục vụ ma trận đặc trưng `mart_grid_daily_features` và cơ sở nghiên cứu hiệu chuẩn.
 
 #### Bảng Fact Khí tượng: `data/core/fct_grid_meteo_daily.parquet`
 - **Hạt dữ liệu đề xuất:** Ô lưới – Ngày (`grid_id`, `date_id`).
@@ -409,7 +420,7 @@ Sau đó tính trung bình 24 giờ của ngày địa phương Hà Nội để 
 
 ### 5.6. Kế hoạch Thực hiện Từng bước của TV3
 - **Bước 1:** Viết script `src/ingest/fetch_era5_native.py` kết nối CDS API tải chuỗi giờ của ~45 pixel ERA5-Land và ~8 pixel BLH.
-- **Bước 2:** Viết script `src/features/process_meteo_daily.py` khử tích lũy mưa, tính gió vô hướng và tính độ ẩm $RH$. Xuất `stg_meteo_daily.parquet`. **Bàn giao ngay cho TV1**.
+- **Bước 2:** Viết script `src/features/process_meteo_daily.py` khử tích lũy mưa, tính gió vô hướng và tính độ ẩm $RH$. Xuất `stg_meteo_daily.parquet` để đối soát và chuẩn bị cho Feature Mart.
 - **Bước 3:** Thử nghiệm thuật toán nội suy Nearest Neighbor và Bilinear trên 1 ngày mẫu sang 3.610 ô lưới. Báo cáo đối soát cho Data Architect (`ngthinh06`).
 - **Bước 4:** Broadcast toàn bộ 5 năm sang 3.610 ô lưới và xuất file `fct_grid_meteo_daily.parquet`.
 

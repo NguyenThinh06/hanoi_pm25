@@ -6,12 +6,13 @@
 **Ngày cập nhật:** 2026-10-26  
 **Trạng thái pháp lý:** **DRAFT / UNDER REVIEW (BẢN THẢO ĐỀ XUẤT – CHỜ CÁC THÀNH VIÊN XÁC NHẬN)**  
 > [!IMPORTANT]
-> **Tuyên bố về Thẩm định và Phê duyệt:**  
-> Bản hợp đồng này **CHƯA ĐƯỢC CHÍNH THỨC PHÊ DUYỆT (NOT RATIFIED)**. Tài liệu phản ánh hiện trạng đã hoàn thành của TV1 và thiết lập các điều kiện nghiệm thu kỹ thuật đối với các thành phần dữ liệu đang phát triển của TV2 và TV3.  
-> **Người cần thẩm định và ký duyệt (Required Sign-offs):**
-> 1. `hunganh` (Thành viên 2 — Static Features & Satellite Owner): Xác nhận hợp đồng bàn giao vệ tinh và đặc trưng tĩnh.
-> 2. `minh` (Thành viên 3 — Meteorology Owner): Xác nhận hợp đồng bàn giao tái phân tích khí tượng và bảng độ ẩm tương đối ($RH$).
-> 3. `ngthinh06` (Data Architect & Spatial Lead — TV1): Ký duyệt nghiệm thu kỹ thuật toàn diện sau khi TV2 và TV3 hoàn tất phản biện.
+> **Tuyên bố về Thẩm định và Trạng thái Thực thi:**  
+> - Bản hợp đồng này **CHƯA ĐƯỢC CHÍNH THỨC PHÊ DUYỆT (NOT RATIFIED)** và chưa phải là bản phát hành production hoàn chỉnh. Tệp đặc tả máy đọc [hanoi_pm25_contract.yaml](../data/contracts/hanoi_pm25_contract.yaml) được thiết lập trạng thái `status: "draft"` và `classification: "internal"`.
+> - **Mục đích sử dụng hiện tại:** Hợp đồng đang được **sử dụng chủ động để kiểm định tự động** các mô hình nền tảng v1.0 đã hoàn thành của TV1 (`dim_grid_1km`, `dim_date`, `dim_station`, `fct_ground_truth_daily`), đồng thời thiết lập các điều kiện nghiệm thu kỹ thuật đối với các thành phần dữ liệu đang phát triển của TV2 và TV3.
+> - **Người cần thẩm định và ký duyệt (Required Sign-offs):**
+>   1. `hunganh` (Thành viên 2 — Static Features & Satellite Owner): Xác nhận hợp đồng bàn giao vệ tinh và đặc trưng tĩnh.
+>   2. `minh` (Thành viên 3 — Meteorology Owner): Xác nhận hợp đồng bàn giao tái phân tích khí tượng và đặc trưng độ ẩm tương đối ($RH$).
+>   3. `ngthinh06` (Data Architect & Spatial Lead — TV1): Ký duyệt nghiệm thu kỹ thuật toàn diện sau khi TV2 và TV3 hoàn tất phản biện.
 >
 > Chi tiết cấu trúc lược đồ các bảng: Xem [Đặc tả Lược đồ Dữ liệu (docs/schema.md)](./schema.md).
 
@@ -53,7 +54,7 @@ Toàn bộ quy trình nạp, làm sạch và tổng hợp dữ liệu phải tu�
 
 ### 2.2. Quy tắc Chuyển đổi UTC và Cửa sổ Nạp Mở rộng (UTC Window Expansion)
 Do độ lệch thời gian giữa UTC và Hà Nội là 7 giờ, ngày địa phương `2021-01-01 00:00:00 ICT` bắt đầu từ `2020-12-31 17:00:00 UTC`.
-- **Rủi ro mất dữ liệu:** Nếu kịch bản Ingestion chỉ gửi request lấy dữ liệu từ `2021-01-01 00:00:00 UTC`, ngày đầu tiên `2021-01-01` tại Hà Nội sẽ bị thiếu 17 giờ đầu (chỉ còn 7 giờ đo), dẫn đến việc bị loại bỏ hoàn toàn bởi quy tắc kiểm định $\ge 18\text{h}$ hợp lệ.
+- **Rủi ro mất dữ liệu:** Nếu kịch bản Ingestion chỉ gửi request lấy dữ liệu từ `2021-01-01 00:00:00 UTC`, mốc này tương ứng với `2021-01-01 07:00:00 ICT`. Ngày đầu tiên `2021-01-01` tại Hà Nội sẽ bị thiếu 7 giờ đầu (`00:00:00` đến `06:59:59` giờ địa phương, ứng với `2020-12-31 17:00:00` đến `23:59:59 UTC`), chỉ còn tối đa 17 giờ quan trắc, dẫn đến việc không thể đạt điều kiện cờ chất lượng $\ge 18\text{h}$ hợp lệ.
 - **Quy định bắt buộc:** Toàn bộ pipeline nạp dữ liệu thô (OpenAQ, ERA5, Viễn thám) phải áp dụng **cửa sổ truy vấn UTC mở rộng**:
   - Thời điểm bắt đầu truy vấn: `"2020-12-31T16:00:00Z"`
   - Thời điểm kết thúc truy vấn: `"2026-01-01T08:00:00Z"`
@@ -62,7 +63,7 @@ Do độ lệch thời gian giữa UTC và Hà Nội là 7 giờ, ngày địa p
 ### 2.3. Quy chuẩn Tổng hợp Ngày Địa phương (Daily Aggregation Rules)
 1. **Quan trắc trạm mặt đất:**
    - Ngày đo hợp lệ bắt buộc phải có **$\text{valid\_hours\_count} \ge 18\text{ giờ}$** (có `qc_flag = 0`).
-   - Các ngày có $< 18\text{h}$ chỉ được lưu ở tầng Staging (`is_valid_day = 0`), **tuyệt đối không được nạp vào `fct_ground_truth_daily`**.
+   - Fact giữ tất cả trạm–ngày có bản ghi. Ngày có dưới 18 giờ sạch mang `is_valid_day = 0`; không có giờ sạch thì `pm25_raw_mean = NULL`.
 2. **Khí tượng ERA5-Land & BLH:**
    - Lượng mưa: Phải khử tích lũy chuỗi giờ trước: $\text{precip\_h} = \max(0.0, \text{tp}_h - \text{tp}_{h-1})$. Sau đó tính tổng lượng mưa 24 giờ của ngày địa phương: $\text{precip\_daily\_mm} = \sum_{h=1}^{24} \text{precip\_h}$.
    - Tốc độ gió: Tính vận tốc tức thời từng giờ $w_h = \sqrt{u_{10,h}^2 + v_{10,h}^2}$, sau đó lấy trung bình vô hướng 24h: $V_{\text{scalar}} = \frac{1}{24}\sum_{h=1}^{24} w_h$.
@@ -85,7 +86,7 @@ Hệ thống thiết lập sự phân biệt rạch ròi giữa 3 trạng thái 
 2. **Quan trắc bị loại bỏ qua Kiểm soát Chất lượng (QC Flagged / Rejected):**
    - Xảy ra khi thiết bị ghi nhận số liệu nhưng vi phạm các điều kiện kỹ thuật (số âm vô lý, vượt ngưỡng vật lý $> 1.000\,\mu\text{g}/\text{m}^3$, kẹt cảm biến flatline $\ge 6\text{h}$, hoặc ngoại lai Hampel).
    - **Xử lý ở Staging:** Giữ nguyên bản ghi chuỗi giờ, gắn cờ `qc_flag > 0` và `is_hampel_outlier = 1`.
-   - **Xử lý ở Core/Fact:** Loại bỏ các giờ bị gắn cờ khỏi phép tính trung bình ngày. Nếu số giờ sạch $< 18\text{h}$, toàn bộ ngày trạm đó bị loại khỏi `fct_ground_truth_daily`.
+   - **Xử lý ở Core/Fact:** Loại giờ bị gắn cờ khỏi phép tính trung bình; giữ ngày trạm và gắn cờ đủ 18 giờ.
 3. **Giá trị đo bằng 0 thực tế (True Zero Measurement):**
    - Xảy ra khi hiện tượng tự nhiên bằng không (ví dụ ngày hoàn toàn không có mưa `precip_daily_mm = 0.0`, tốc độ gió lặng `wind_speed_scalar_ms = 0.0`).
    - **Biểu diễn:** Lưu trữ chính xác số `0.0`.
@@ -102,9 +103,8 @@ Hệ thống thiết lập sự phân biệt rạch ròi giữa 3 trạng thái 
 
 | Tên trường dữ liệu | Bảng mục tiêu | Đơn vị đo | Miền giá trị hợp lệ | Mức độ cảnh báo | Biện pháp xử lý vi phạm |
 | :--- | :--- | :---: | :---: | :---: | :--- |
-| `valid_hours_count` | `fct_ground_truth_daily` | Giờ | $[18, 24]$ | **BLOCKER** | Drop bản ghi khỏi bảng Fact; ghi nhận lỗi vào log. |
-| `pm25_raw_mean` | `fct_ground_truth_daily` | $\mu\text{g}/\text{m}^3$ | $[0.0, 800.0]$ | **CRITICAL** | Nếu $< 0$: Lỗi nạp. Nếu $> 800$: Đánh cờ nghi vấn trạm cháy/sự cố. |
-| `pm25_calibrated_mean`| `fct_ground_truth_daily`| $\mu\text{g}/\text{m}^3$ | $[0.0, 800.0]$ | **CRITICAL** | Kiểm tra lại hệ số Köhler $C(RH)$. Bắt buộc $\le \text{pm25\_raw\_mean}$. |
+| `valid_hours_count` | `fct_ground_truth_daily` | Giờ | $[0, 24]$ | **BLOCKER** | Giá trị ngoài khoảng là lỗi; dưới 18 giờ được giữ và gắn cờ `is_valid_day = 0`. |
+| `pm25_raw_mean` | `fct_ground_truth_daily` | $\mu\text{g}/\text{m}^3$ | $[0.0, 1000.0]$ (chặn cứng)<br/>$> 800.0$ (cảnh báo) | **BLOCKER** (ngoài $[0, 1000]$)<br/>*WARNING* (khi $> 800$) | Giá trị ngoài $[0.0, 1000.0]$ bị verifier đánh FAILED. Mức $> 800$ là cảnh báo nghiệp vụ dự kiến (nghi vấn sự cố/cháy trạm), chưa chặn cứng tự động. |
 | `temp_2m_mean_c` | `fct_grid_meteo_daily` | $^\circ\text{C}$ | $[-5.0, 50.0]$ | **BLOCKER** | Lỗi chuyển đổi Kelvin ($T - 273.15$); từ chối nhận batch. |
 | `dewpoint_2m_mean_c` | `fct_grid_meteo_daily` | $^\circ\text{C}$ | $[-10.0, 40.0]$ | **CRITICAL** | Bắt buộc $\le \text{temp\_2m\_mean\_c} + 0.1$. |
 | `rh_mean_pct` | `fct_grid_meteo_daily` | $\%$ | $[0.0, 100.0]$ | **BLOCKER** | Kẹp trần `min(100.0, max(0.0, rh))` và cảnh báo công thức Tetens. |
@@ -192,9 +192,10 @@ Phần này quy định các cam kết bàn giao đối với hai bảng Fact ch
 
 ### 5.2. Bàn giao của Thành viên 3 (`minh` — Tái phân tích Khí tượng ERA5)
 
-#### 1. Bàn giao 1: Bảng Độ ẩm Tương đối ($RH$) Giải phóng Nút thắt cho TV1
-- **Đường dẫn bàn giao:** `data/staging/stg_meteo_daily.parquet` (kèm cột `rh_mean_pct`).
-- **Thời hạn & Mục tiêu:** Bàn giao sớm để TV1 thực hiện hiệu chỉnh ẩm $\kappa$-Köhler cho các trạm quan trắc mặt đất Tier 2 (ADR-011).
+#### 1. Bàn giao 1: Đặc trưng Độ ẩm Tương đối ($RH$) cho Chợ Đặc trưng & Nghiên cứu Hiệu chuẩn
+- **Đường dẫn bàn giao:** `data/staging/stg_meteo_daily.parquet` (kèm cột `rh_mean_pct`) và `fct_grid_meteo_daily.parquet`.
+- **Mục tiêu:** Cung cấp độ ẩm tương đối ($RH$) phục vụ ma trận đặc trưng `mart_grid_daily_features` và làm cơ sở dữ liệu cho các nghiên cứu mô hình hóa hiệu chuẩn trong tương lai nếu nhóm phê duyệt.
+- **Lưu ý nghiệp vụ:** Độ ẩm $RH$ là một đặc trưng khí tượng, không tự động kích hoạt hiệu chỉnh $\kappa$-Köhler đơn phương trên dữ liệu trạm mặt đất. Mọi mô hình hiệu chỉnh cảm biến (nếu có) phải trải qua kiểm định thực nghiệm đồng vị trí và được nhóm thống nhất nghiệm thu trước khi áp dụng.
 - **Tiêu chí nghiệm thu:** Cột `rh_mean_pct` được tính từ $T_{2m}$ và $T_{dew}$ chuỗi giờ theo công thức Magnus-Tetens, gom trung bình ngày địa phương Hà Nội, giá trị đầy đủ không khuyết thiếu, dải đo hợp lệ $[0.0, 100.0]\%$.
 
 #### 2. Bàn giao 2: Dữ liệu Fact Khí tượng Hàng ngày (`fct_grid_meteo_daily`)
@@ -224,17 +225,17 @@ Phần này quy định các cam kết bàn giao đối với hai bảng Fact ch
 | :--- | :--- | :--- | :--- | :---: | :--- |
 | `CHK_SCHEMA_01` | Sự tồn tại của File và Thư mục | Mọi model | File Parquet tồn tại trên đĩa | **ĐÃ HỖ TRỢ** (`contract_verifier.py`) | Báo `PENDING` nếu upstream chưa giao; Báo `FAILED` nếu model bắt buộc bị thiếu. |
 | `CHK_SCHEMA_02` | Sự hiện diện của các cột bắt buộc v1.0 | `dim_grid_1km`, `dim_date`, `dim_station`, `fct_ground_truth_daily` | 100% cột giai đoạn v1.0 phải có trong file | **ĐÃ HỖ TRỢ** (`contract_verifier.py`) | Báo `FAILED`. Chặn commit Git ngay lập tức. |
-| `CHK_SCHEMA_03` | Kiểm tra đúng kiểu dữ liệu (Data Types) | Mọi model | Khớp chính xác kiểu Parquet (INT32, DOUBLE, VARCHAR...) | *CHƯA HỖ TRỢ TRONG CODE* (Verifier hiện chỉ check tên cột) | Cần cập nhật verifier để so sánh kiểu DuckDB DESCRIBE với YAML. |
+| `CHK_SCHEMA_03` | Kiểm tra đúng kiểu dữ liệu (Data Types) | Mọi model | Khớp chính xác kiểu Parquet theo định nghĩa YAML | **ĐÃ HỖ TRỢ** (`contract_verifier.py`) | Báo `FAILED` nếu sai kiểu dữ liệu tương thích. |
 | `CHK_SCHEMA_04` | Cột Enrichment v1.1 từ TV2 | `dim_grid_1km` | Đủ 8-15 cột đặc trưng tĩnh đô thị | **ĐÃ HỖ TRỢ** (`contract_verifier.py`) | Báo `PENDING` do đang chờ TV2 bàn giao. |
 | `CHK_PK_NULL` | Tính Không-Null của Khóa chính | Mọi model | $0\%$ dòng có giá trị NULL ở các cột khóa chính | **ĐÃ HỖ TRỢ** (`contract_verifier.py`) | Báo `FAILED`. Dừng pipeline. |
-| `CHK_PK_UNIQUE` | Tính Duy nhất 100% của Khóa chính | `dim_grid_1km`, `dim_date`, `dim_station`, `fct_ground_truth_daily` | `COUNT(*) == COUNT(DISTINCT PK)` | *HỖ TRỢ MỘT PHẦN* (Chỉ mới viết SQL cho `mart_grid_daily_features`) | Bổ sung kiểm tra tính duy nhất cho tất cả các bảng Dims và Facts. |
+| `CHK_PK_UNIQUE` | Tính Duy nhất 100% của Khóa chính | `dim_grid_1km`, `dim_date`, `dim_station`, `fct_ground_truth_daily` | `COUNT(*) == COUNT(DISTINCT PK)` | **ĐÃ HỖ TRỢ** (`contract_verifier.py`) | Báo `FAILED` nếu có bản ghi khóa chính trùng lặp. |
 | `CHK_FK_ORPHAN` | Toàn vẹn Khóa ngoại (Zero Orphan FK) | `fct_ground_truth_daily` $\rightarrow$ `dim_station` | 100% khóa ngoại phải tồn tại ở bảng danh mục tương ứng | **ĐÃ HỖ TRỢ QUA SQL ASSERTION** (`assert_zero_orphan_station_join`) | Báo `FAILED`. Không cho phép có bản ghi mồ côi. |
 | `CHK_VOLUME_SPINE`| Khớp đúng quy mô Ma trận Spine $|S|$ | `mart_grid_daily_features` | Số dòng phải bằng chính xác $6.591.860\text{ dòng}$ | **ĐÃ HỖ TRỢ QUA SQL ASSERTION** (`assert_exact_spine_mart_volume`) | Báo `PENDING` (chờ hoàn thiện Marts). Báo `FAILED` nếu sai lệch dù chỉ 1 dòng. |
 | `CHK_ANTI_LEAK` | Rào chắn Chống Rò rỉ Nhãn (Label Firewall)| `mart_grid_daily_features` | Schema không được chứa cột khớp mẫu `*pm25*`, `*label*`, `*ground_truth*` | **ĐÃ HỖ TRỢ** (`contract_verifier.py`) | Báo `FAILED`. Hủy bỏ build Mart ngay lập tức. |
-| `CHK_QC_18H` | Ràng buộc nghiệp vụ ngày trạm hợp lệ | `fct_ground_truth_daily` | 100% bản ghi phải có `valid_hours_count >= 18` | **ĐÃ HỖ TRỢ QUA SQL ASSERTION** (`assert_ground_truth_strict_18h_rule`) | Báo `FAILED`. Kiểm tra lại bước tổng hợp Staging. |
-| `CHK_PHYSICS_RANGE`| Miền giá trị vật lý của các chỉ số | Mọi cột số đo | Nằm trong dải hợp lệ quy định tại Mục 3.3 | *CHƯA HỖ TRỢ TỰ ĐỘNG* (Verifier chưa đọc trường `range` trong YAML) | Cần bổ sung logic quét min/max theo cấu hình YAML. |
+| `CHK_QC_18H` | Cờ ngày đủ 18 giờ | `fct_ground_truth_daily` | `is_valid_day` bằng 1 khi số giờ sạch ≥ 18, ngược lại bằng 0 | **ĐÃ HỖ TRỢ QUA SQL ASSERTION** (`assert_ground_truth_valid_day_flag`) | Báo `FAILED` nếu cờ không khớp. |
+| `CHK_PHYSICS_RANGE`| Miền giá trị vật lý và tập giá trị cho phép | Mọi cột số đo và cờ phân loại | Nằm trong dải hợp lệ quy định tại Mục 3.3 và YAML | **ĐÃ HỖ TRỢ** (`contract_verifier.py`) | Báo `FAILED` nếu phát hiện vi phạm dải giá trị hoặc tập cho phép. |
 | `CHK_NULL_TOLERANCE`| Tỷ lệ khuyết thiếu tối đa cho phép | `mart_grid_daily_features` (cột nhiệt độ) | Tỷ lệ `NULL` của `temp_2m_mean_c` $\le 5\%$ | **ĐÃ HỖ TRỢ QUA SQL ASSERTION** (`assert_meteo_null_rate_tolerance`) | Báo `PENDING` (chờ hoàn thiện Marts). |
-| `CHK_SPATIAL_CRS` | Kiểm tra Hệ quy chiếu GeoParquet | `dim_grid_1km` | Metadata GeoParquet phải ghi nhận `EPSG:3405` | *CHƯA HỖ TRỢ TRONG CODE* | Cần bổ sung kiểm tra cấu trúc metadata GeoParquet 1.1.0. |
+| `CHK_SPATIAL_CRS` | Kiểm tra Hệ quy chiếu GeoParquet | `dim_grid_1km` | Metadata GeoParquet phải ghi nhận `EPSG:3405` | *CHƯA HỖ TRỢ TỰ ĐỘNG* | Cần bổ sung kiểm tra cấu trúc metadata GeoParquet 1.1.0. |
 
 ### 6.2. Phân biệt Báo Cáo Nghiệm thu: Hiện hữu vs Chưa bàn giao
 > [!WARNING]
@@ -251,4 +252,4 @@ Phần này quy định các cam kết bàn giao đối với hai bảng Fact ch
 - Xem chi tiết kiến trúc và luồng dữ liệu 4 tầng Medallion tại:  
   👉 **[Đặc tả Lược đồ Dữ liệu: docs/schema.md](./schema.md)**
 - Mã nguồn kiểm tra hợp đồng tự động: Xem [contract_verifier.py](../src/common/contract_verifier.py).
-- Kế hoạch phân công nhiệm vụ và lộ trình 6 giai đoạn: Xem [03_MASTER_EXECUTION_PLAN.md](./planning_v3/03_MASTER_EXECUTION_PLAN.md).
+- Hướng dẫn phối hợp thực thi và cẩm nang hành động cho từng thành viên: Xem [Cẩm nang Thực thi & Bàn giao (docs/guide.md)](./guide.md).

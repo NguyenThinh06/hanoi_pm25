@@ -1,10 +1,11 @@
 """
 run.py — CLI Command Center cho dự án HANOI_PM25
-Điều phối toàn bộ vòng đời: lint, test, grid, date, audit, ingest, staging, core-station, predict.
+Điều phối toàn bộ vòng đời: lint, test, grid, date, audit, ingest, staging, core-station, predict, contract.
 """
 from __future__ import annotations
 
 import argparse
+import importlib.util
 import subprocess
 import sys
 
@@ -24,7 +25,8 @@ def main():
     subparsers = parser.add_subparsers(dest="subcommand", help="Lệnh cần chạy")
 
     # 1. Lint code
-    subparsers.add_parser("lint", help="Kiểm tra chất lượng code bằng ruff")
+    lint_p = subparsers.add_parser("lint", help="Kiểm tra chất lượng code bằng ruff (không tự động sửa trừ khi có --fix)")
+    lint_p.add_argument("--fix", action="store_true", help="Tự động sửa các lỗi lint an toàn")
 
     # 2. Test
     subparsers.add_parser("test", help="Chạy toàn bộ unit tests")
@@ -42,8 +44,11 @@ def main():
     ingest_p = subparsers.add_parser("ingest", help="Thu thập dữ liệu trạm quan trắc")
     ingest_p.add_argument("--start-year", type=int, default=2021, help="Năm bắt đầu (mặc định: 2021)")
     ingest_p.add_argument("--end-year", type=int, default=2025, help="Năm kết thúc (mặc định: 2025)")
+    ingest_p.add_argument("--start-month", type=int, default=1, help="Tháng bắt đầu (1-12, mặc định: 1)")
+    ingest_p.add_argument("--end-month", type=int, default=12, help="Tháng kết thúc (1-12, mặc định: 12)")
+    ingest_p.add_argument("--month", type=int, default=None, help="Chỉ định chính xác 1 tháng để thu thập (ví dụ: --month 4)")
     ingest_p.add_argument("--limit-stations", type=int, default=0, help="Giới hạn số trạm (0 = tất cả)")
-    ingest_p.add_argument("--force", action="store_true", help="Ép cào lại kể cả khi file đã tồn tại")
+    ingest_p.add_argument("--force", action="store_true", help="Ép cào lại kể cả khi trạng thái đã ghi nhận hoàn tất")
 
     # 7. Staging trạm
     subparsers.add_parser("staging", help="Làm sạch chuỗi giờ và gán cờ QC phân tầng")
@@ -55,12 +60,15 @@ def main():
     subparsers.add_parser("predict", help="Suy luận bản đồ bụi mịn PM2.5 toàn Hà Nội")
 
     # 10. Kiểm định Hợp đồng Dữ liệu (Data Contract)
-    subparsers.add_parser("contract", help="Kiểm định toàn bộ Lakehouse theo Hợp đồng Dữ liệu ODCS v3.0")
+    contract_p = subparsers.add_parser("contract", help="Kiểm định toàn bộ Lakehouse theo Hợp đồng Dữ liệu ODCS v3.0")
+    contract_p.add_argument("--strict", action="store_true", help="Chế độ nghiêm ngặt: Thất bại (exit code 1) nếu thiếu các model bắt buộc")
+    contract_p.add_argument("--contract", type=str, default="data/contracts/hanoi_pm25_contract.yaml", help="Đường dẫn file hợp đồng YAML")
 
     args = parser.parse_args()
 
     if args.subcommand == "lint":
-        run_cmd("python -m ruff check --fix .", "Kiem tra va tu dong format code bang ruff")
+        fix_flag = " --fix" if args.fix else ""
+        run_cmd(f"python -m ruff check{fix_flag} .", "Kiem tra chat luong code bang ruff")
 
     elif args.subcommand == "test":
         run_cmd("python -m pytest tests/unit/ -v", "Thuc thi toan bo Unit Tests")
@@ -75,9 +83,10 @@ def main():
         run_cmd("python -m src.ingest.audit_stations", "Kiem toan tram mat dat OpenAQ va map grid 1km")
 
     elif args.subcommand == "ingest":
-        force_flag = "--force" if args.force else ""
+        force_flag = " --force" if args.force else ""
+        month_flag = f" --month {args.month}" if args.month is not None else f" --start-month {args.start_month} --end-month {args.end_month}"
         run_cmd(
-            f"python -m src.ingest.fetch_ground_truth --start-year {args.start_year} --end-year {args.end_year} --limit-stations {args.limit_stations} {force_flag}",
+            f"python -m src.ingest.fetch_ground_truth --start-year {args.start_year} --end-year {args.end_year}{month_flag} --limit-stations {args.limit_stations}{force_flag}",
             f"Thu thap du lieu gio tho PM2.5 OpenAQ tu {args.start_year} den {args.end_year}"
         )
 
@@ -88,10 +97,19 @@ def main():
         run_cmd("python -m src.features.build_ground_truth_daily", "Tao dim_station va fct_ground_truth_daily")
 
     elif args.subcommand == "predict":
-        run_cmd("python -m src.models.predict_grid", "Quet toan luoi sinh ban do o nhiem PM2.5")
+        if importlib.util.find_spec("src.models.predict_grid") is None:
+            print("\n[INFO] Chuc nang 'predict' chua duoc trien khai.")
+            print("       Module 'src.models.predict_grid' chua ton tai (du kien o Phase 5/6 sau khi hoan thanh Feature Marts).")
+            sys.exit(0)
+        else:
+            run_cmd("python -m src.models.predict_grid", "Quet toan luoi sinh ban do o nhiem PM2.5")
 
     elif args.subcommand == "contract":
-        run_cmd("python -m src.common.contract_verifier", "Kiem dinh Lakehouse theo Hop dong Du lieu ODCS v3.0")
+        strict_flag = " --strict" if args.strict else ""
+        run_cmd(
+            f"python -m src.common.contract_verifier --contract {args.contract}{strict_flag}",
+            "Kiem dinh Lakehouse theo Hop dong Du lieu ODCS v3.0"
+        )
 
     else:
         parser.print_help()
