@@ -1,0 +1,60 @@
+{
+  "grain": "grid_id, year",
+  "rows": 18050,
+  "grid_crs": "EPSG:3405",
+  "road_columns": [
+    "osm_primary_road_m",
+    "osm_road_density_km_km2"
+  ],
+  "annual_policy": "early-January OSM snapshot is assigned to its calendar year; approximate annual representation, not exact daily as-of history",
+  "cell_policy": "full 1 km TV1 squares; lines clipped to square; density km / 1 km2",
+  "primary_classes": [
+    "motorway",
+    "primary",
+    "trunk"
+  ],
+  "static_dim_policy": "canonical grid has one row per grid_id and 2021 baseline roads",
+  "mart_policy": "join canonical grid by grid_id and yearly OSM by (grid_id, date year); WorldCover 2021 and DEM stay fixed",
+  "sources": [
+    {
+      "year": 2021,
+      "archive": "data/raw/static/osm/vietnam-210101-free.shp.zip",
+      "snapshot_utc": "2021-01-01T21:42:03Z",
+      "size_bytes": 375675976,
+      "sha256": "f57ccaadcebbcdf0df0509e67af4426ae316efa695a3bc4ece68dec283f35728",
+      "geofabrik_md5": "2beaf6823583fd461db0648ab8c56fb2"
+    },
+    {
+      "year": 2022,
+      "archive": "data/raw/static/osm/vietnam-220101-free.shp.zip",
+      "snapshot_utc": "2022-01-01T21:21:26Z",
+      "size_bytes": 563496126,
+      "sha256": "f609babe00e32ea9e5fa3c5fb9981b226877680bc1641091ffc9c6a5712a6a09",
+      "geofabrik_md5": "b3144fba82b1c25c77af3bff5b842ac0"
+    },
+    {
+      "year": 2023,
+      "archive": "data/raw/static/osm/vietnam-230101-free.shp.zip",
+      "snapshot_utc": "2023-01-01T21:21:53Z",
+      "size_bytes": 579586840,
+      "sha256": "bf2b0145093aef33665b018724688afc76f1c9abdc3d9c93071b1ad412c4b031",
+      "geofabrik_md5": "4c9ce558358c1cae31e889217917c799"
+    },
+    {
+      "year": 2024,
+      "archive": "data/raw/static/osm/vietnam-240101-free.shp.zip",
+      "snapshot_utc": "2024-01-01T21:21:15Z",
+      "size_bytes": 603362070,
+      "sha256": "65ae11cddfb2fe564ff6880838a96f983104f23d7fa762b43ee627c1b5b7f107",
+      "geofabrik_md5": "eb86ddf857c434b8ac963832ab7eea98"
+    },
+    {
+      "year": 2025,
+      "archive": "data/raw/static/osm/vietnam-250101-free.shp.zip",
+      "snapshot_utc": "2025-01-01T21:21:00Z",
+      "size_bytes": 637279888,
+      "sha256": "a4f526c11b69810e69f3357441c5377978fa7d3d1b807250f8ad77f3a83d1d5c",
+      "geofabrik_md5": "1d29ec33146a1b027e734aae18e618d0"
+    }
+  ]
+}

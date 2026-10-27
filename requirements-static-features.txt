@@ -1,0 +1,2 @@
+-r requirements-spine.txt
+rasterio==1.5.2

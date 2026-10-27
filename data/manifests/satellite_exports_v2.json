@@ -1,0 +1,152 @@
+{
+  "drive_folder": "https://drive.google.com/drive/folders/114qTj-7KaPOAL2B7-jG62iJltSKWLJlK",
+  "exports": [
+    {
+      "source": "aod",
+      "file": "hanoi_aod_2021_q1_v2.csv",
+      "drive_id": "19UK1abyN6hEymZovmHtOhMhR0XBRMyAe",
+      "size": 11599925,
+      "sha256": "c0f1a14baabb38c32aaf1b7dffe8bd8823e8644456e97c2d59d6364a4d931558"
+    },
+    {
+      "source": "no2",
+      "file": "hanoi_no2_2021_q1_v2.csv",
+      "drive_id": "1oXmoITqwg04z3uk-kJ2Lyqgr6jaywiO1",
+      "size": 11990437,
+      "sha256": "79529eda99d80b41292a73b13592b9d5dce7152beacc1a671bcd9ebf3375a07c"
+    },
+    {
+      "source": "viirs",
+      "file": "hanoi_viirs_2021_q1_v2.csv",
+      "drive_id": "12r5ydfGsIQ13y1Jgun8SJ-04odL2ariZ",
+      "size": 671413,
+      "sha256": "9e4971b79768b14d5adb641d6198029e5d91a0a8814b2a039e68422c90536958"
+    },
+    {
+      "source": "aod",
+      "file": "hanoi_aod_2021_q2_v2.csv",
+      "drive_id": "150w8MoHIJVXwYAd6XuAQWpJdkXIZL5Pv",
+      "size": 11247395,
+      "sha256": "17361beca0ba0325c824d7de2337f256e3396a79c7c124385532037db5097890"
+    },
+    {
+      "source": "no2",
+      "file": "hanoi_no2_2021_q2_v2.csv",
+      "drive_id": "15hTjmBvh0_tHze_fpKNaMo5ygzTUzt_9",
+      "size": 12900030,
+      "sha256": "027d7a94dea6b20003f629b12c09da2a5eecee5470ceeca49d3127a6c6d79336"
+    },
+    {
+      "source": "viirs",
+      "file": "hanoi_viirs_2021_q2_v2.csv",
+      "drive_id": "11bMJl8v0nyOukLvAeZTV0B8UDI5kBRQc",
+      "size": 675070,
+      "sha256": "29a2e1802c3c6eaba79abbbaac1b57b7cc8b83ea723999fb739d840a3b55cc30"
+    },
+    {
+      "source": "aod",
+      "file": "hanoi_aod_2021_q3_to_2021_q4_v2.csv",
+      "drive_id": "1kX1IPUUYxa5gEL2voc5TyQoCIn1RBIdD",
+      "size": 23956536,
+      "sha256": "4bc2fb674dd81f0fb664aefbca3660476a5a6b45711c7c714ab90328a4d4f4a6"
+    },
+    {
+      "source": "no2",
+      "file": "hanoi_no2_2021_q3_to_2021_q4_v2.csv",
+      "drive_id": "1HtoyZxiQ1QI9_DfNIGjQbbZ9FpA_kscb",
+      "size": 28004190,
+      "sha256": "7ea93209bba83deb91b080b884fcb2842e68a4ad4ff5e168f25ea0507965ebb2"
+    },
+    {
+      "source": "viirs",
+      "file": "hanoi_viirs_2021_q3_to_2021_q4_v2.csv",
+      "drive_id": "1JPYycNj0jwi2VUM6JiXz8JVPHh6JVCb3",
+      "size": 1252630,
+      "sha256": "a5271c580ef2340c83d3755094443f6800364305ab9e4c9eed85a419c25a646c"
+    },
+    {
+      "source": "aod",
+      "file": "hanoi_aod_2022_q1_to_2022_q4_v2.csv",
+      "drive_id": "1vY-dHhU4B_svvny8bssht-9phJJiLkq9",
+      "size": 47010159,
+      "sha256": "f44595858173cb3969fadacb8abe1462c7963b40afe9a09bcf31d6b54bef6b3e"
+    },
+    {
+      "source": "no2",
+      "file": "hanoi_no2_2022_q1_to_2022_q4_v2.csv",
+      "drive_id": "1LUbLqFRx1vl9rI0ZSrOPnuNePZl9WqIi",
+      "size": 52028925,
+      "sha256": "17ae68a14646e0df461106c594c1390fa95c7192e9139c3e4a4d07f69d06ac59"
+    },
+    {
+      "source": "viirs",
+      "file": "hanoi_viirs_2022_q1_to_2022_q4_v2.csv",
+      "drive_id": "1GoUGbJ3m08gKlt98wzYF30YBZsOkc2i1",
+      "size": 2559459,
+      "sha256": "d9633b98604feb611022e5dea959c4b569af4a4c3de5d2d5e408761d6ec7c9ad"
+    },
+    {
+      "source": "aod",
+      "file": "hanoi_aod_2023_q1_to_2023_q4_v2.csv",
+      "drive_id": "1YzNjngB4uEVyZ37X9Gg0RXcPan3DQ1dN",
+      "size": 47420059,
+      "sha256": "388e12d6614ed181d85021d4c5589b6a9384e17b6b5ed6e604b7ee7eb313643c"
+    },
+    {
+      "source": "no2",
+      "file": "hanoi_no2_2023_q1_to_2023_q4_v2.csv",
+      "drive_id": "1ZdilolEjQdxqo7HR7OjMrr1pFSTwkPvh",
+      "size": 53330698,
+      "sha256": "aa90193a4040807a655885d4098e3ad9cc00816b09303be06b7cb29a4fee99c3"
+    },
+    {
+      "source": "viirs",
+      "file": "hanoi_viirs_2023_q1_to_2023_q4_v2.csv",
+      "drive_id": "1OJ-7S9Mq2FeUoddfKBH0XioL2MX0qp2A",
+      "size": 2561538,
+      "sha256": "889603f0cf6d631ca558d3172ca18649fbc405fbfb45080ea8533a5ce1569f09"
+    },
+    {
+      "source": "aod",
+      "file": "hanoi_aod_2024_q1_to_2024_q4_v2.csv",
+      "drive_id": "1KAyBvAHOH8tb_UdF5R_IKOb0HT2tx5aF",
+      "size": 46582514,
+      "sha256": "40fae6c7a70ab8fa207aff3b84e34df28eac8a24713c9b760d42746968a530cf"
+    },
+    {
+      "source": "no2",
+      "file": "hanoi_no2_2024_q1_to_2024_q4_v2.csv",
+      "drive_id": "1datK7hZf08gywT-bbYRlUesZ8Dbq-7lL",
+      "size": 51689767,
+      "sha256": "8f530deebeb52696ef6189fa759953a736e04655588402eaf163ef2cec432a53"
+    },
+    {
+      "source": "viirs",
+      "file": "hanoi_viirs_2024_q1_to_2024_q4_v2.csv",
+      "drive_id": "1UZh4DlwOQ4WwCi1j5OuYtWskwXbi2aUc",
+      "size": 2574712,
+      "sha256": "938cd7bdfe884796ac494f062b668089f3519f1a6f030279c8629a5fe475829c"
+    },
+    {
+      "source": "aod",
+      "file": "hanoi_aod_2025_q1_to_2025_q4_v2.csv",
+      "drive_id": "1lXy0NA2Rcev4-ioeFhbPEPP-i195ZNqB",
+      "size": 46952569,
+      "sha256": "cf05334665d5d1d64e1946f7ea52e56192e4baaa12bf8bf0b38f7d01e87424a5"
+    },
+    {
+      "source": "no2",
+      "file": "hanoi_no2_2025_q1_to_2025_q4_v2.csv",
+      "drive_id": "1TQw2hl8lEHh4qsGSWkEHEqIbxuur5XbB",
+      "size": 51721550,
+      "sha256": "00ba5d2b5301f83a5bd54c78bc96bebbcc53fbcd8152f3d6f34e1ae94498df39"
+    },
+    {
+      "source": "viirs",
+      "file": "hanoi_viirs_2025_q1_to_2025_q4_v2.csv",
+      "drive_id": "1nbH_0rW0J_ImWriDquZ-avkVJZiidKdd",
+      "size": 2637306,
+      "sha256": "37b744192b951187aae86325642acf99dc4546e9d03e9f9ccc75c45cf69f3978"
+    }
+  ]
+}

@@ -1,0 +1,176 @@
+{
+  "version": "v2",
+  "grid_cells": 3610,
+  "bronze_partition_count": 100,
+  "exports": [
+    {
+      "file": "hanoi_aod_2021_q1_v2.csv",
+      "source": "aod",
+      "csv_sha256": "c0f1a14baabb38c32aaf1b7dffe8bd8823e8644456e97c2d59d6364a4d931558",
+      "rows": 324900,
+      "non_null_values": 46353,
+      "negative_values": 0
+    },
+    {
+      "file": "hanoi_no2_2021_q1_v2.csv",
+      "source": "no2",
+      "csv_sha256": "79529eda99d80b41292a73b13592b9d5dce7152beacc1a671bcd9ebf3375a07c",
+      "rows": 324900,
+      "non_null_values": 62501,
+      "negative_values": 0
+    },
+    {
+      "file": "hanoi_viirs_2021_q1_v2.csv",
+      "source": "viirs",
+      "csv_sha256": "9e4971b79768b14d5adb641d6198029e5d91a0a8814b2a039e68422c90536958",
+      "rows": 10830,
+      "non_null_values": 10820,
+      "negative_values": 0
+    },
+    {
+      "file": "hanoi_aod_2021_q2_v2.csv",
+      "source": "aod",
+      "csv_sha256": "17361beca0ba0325c824d7de2337f256e3396a79c7c124385532037db5097890",
+      "rows": 328510,
+      "non_null_values": 23708,
+      "negative_values": 0
+    },
+    {
+      "file": "hanoi_no2_2021_q2_v2.csv",
+      "source": "no2",
+      "csv_sha256": "027d7a94dea6b20003f629b12c09da2a5eecee5470ceeca49d3127a6c6d79336",
+      "rows": 328510,
+      "non_null_values": 101542,
+      "negative_values": 109
+    },
+    {
+      "file": "hanoi_viirs_2021_q2_v2.csv",
+      "source": "viirs",
+      "csv_sha256": "29a2e1802c3c6eaba79abbbaac1b57b7cc8b83ea723999fb739d840a3b55cc30",
+      "rows": 10830,
+      "non_null_values": 10674,
+      "negative_values": 0
+    },
+    {
+      "file": "hanoi_aod_2021_q3_to_2021_q4_v2.csv",
+      "source": "aod",
+      "csv_sha256": "4bc2fb674dd81f0fb664aefbca3660476a5a6b45711c7c714ab90328a4d4f4a6",
+      "rows": 664240,
+      "non_null_values": 112660,
+      "negative_values": 0
+    },
+    {
+      "file": "hanoi_no2_2021_q3_to_2021_q4_v2.csv",
+      "source": "no2",
+      "csv_sha256": "7ea93209bba83deb91b080b884fcb2842e68a4ad4ff5e168f25ea0507965ebb2",
+      "rows": 664240,
+      "non_null_values": 300243,
+      "negative_values": 136
+    },
+    {
+      "file": "hanoi_viirs_2021_q3_to_2021_q4_v2.csv",
+      "source": "viirs",
+      "csv_sha256": "a5271c580ef2340c83d3755094443f6800364305ab9e4c9eed85a419c25a646c",
+      "rows": 21660,
+      "non_null_values": 18409,
+      "negative_values": 0
+    },
+    {
+      "file": "hanoi_aod_2022_q1_to_2022_q4_v2.csv",
+      "source": "aod",
+      "csv_sha256": "f44595858173cb3969fadacb8abe1462c7963b40afe9a09bcf31d6b54bef6b3e",
+      "rows": 1317650,
+      "non_null_values": 164449,
+      "negative_values": 0
+    },
+    {
+      "file": "hanoi_no2_2022_q1_to_2022_q4_v2.csv",
+      "source": "no2",
+      "csv_sha256": "17ae68a14646e0df461106c594c1390fa95c7192e9139c3e4a4d07f69d06ac59",
+      "rows": 1317650,
+      "non_null_values": 422087,
+      "negative_values": 200
+    },
+    {
+      "file": "hanoi_viirs_2022_q1_to_2022_q4_v2.csv",
+      "source": "viirs",
+      "csv_sha256": "d9633b98604feb611022e5dea959c4b569af4a4c3de5d2d5e408761d6ec7c9ad",
+      "rows": 43320,
+      "non_null_values": 39376,
+      "negative_values": 0
+    },
+    {
+      "file": "hanoi_aod_2023_q1_to_2023_q4_v2.csv",
+      "source": "aod",
+      "csv_sha256": "388e12d6614ed181d85021d4c5589b6a9384e17b6b5ed6e604b7ee7eb313643c",
+      "rows": 1317650,
+      "non_null_values": 214391,
+      "negative_values": 0
+    },
+    {
+      "file": "hanoi_no2_2023_q1_to_2023_q4_v2.csv",
+      "source": "no2",
+      "csv_sha256": "aa90193a4040807a655885d4098e3ad9cc00816b09303be06b7cb29a4fee99c3",
+      "rows": 1317650,
+      "non_null_values": 488216,
+      "negative_values": 100
+    },
+    {
+      "file": "hanoi_viirs_2023_q1_to_2023_q4_v2.csv",
+      "source": "viirs",
+      "csv_sha256": "889603f0cf6d631ca558d3172ca18649fbc405fbfb45080ea8533a5ce1569f09",
+      "rows": 43320,
+      "non_null_values": 41810,
+      "negative_values": 0
+    },
+    {
+      "file": "hanoi_aod_2024_q1_to_2024_q4_v2.csv",
+      "source": "aod",
+      "csv_sha256": "40fae6c7a70ab8fa207aff3b84e34df28eac8a24713c9b760d42746968a530cf",
+      "rows": 1321260,
+      "non_null_values": 163357,
+      "negative_values": 0
+    },
+    {
+      "file": "hanoi_no2_2024_q1_to_2024_q4_v2.csv",
+      "source": "no2",
+      "csv_sha256": "8f530deebeb52696ef6189fa759953a736e04655588402eaf163ef2cec432a53",
+      "rows": 1321260,
+      "non_null_values": 400332,
+      "negative_values": 119
+    },
+    {
+      "file": "hanoi_viirs_2024_q1_to_2024_q4_v2.csv",
+      "source": "viirs",
+      "csv_sha256": "938cd7bdfe884796ac494f062b668089f3519f1a6f030279c8629a5fe475829c",
+      "rows": 43320,
+      "non_null_values": 39831,
+      "negative_values": 0
+    },
+    {
+      "file": "hanoi_aod_2025_q1_to_2025_q4_v2.csv",
+      "source": "aod",
+      "csv_sha256": "cf05334665d5d1d64e1946f7ea52e56192e4baaa12bf8bf0b38f7d01e87424a5",
+      "rows": 1317650,
+      "non_null_values": 191138,
+      "negative_values": 0
+    },
+    {
+      "file": "hanoi_no2_2025_q1_to_2025_q4_v2.csv",
+      "source": "no2",
+      "csv_sha256": "00ba5d2b5301f83a5bd54c78bc96bebbcc53fbcd8152f3d6f34e1ae94498df39",
+      "rows": 1317650,
+      "non_null_values": 409084,
+      "negative_values": 42
+    },
+    {
+      "file": "hanoi_viirs_2025_q1_to_2025_q4_v2.csv",
+      "source": "viirs",
+      "csv_sha256": "37b744192b951187aae86325642acf99dc4546e9d03e9f9ccc75c45cf69f3978",
+      "rows": 43320,
+      "non_null_values": 42319,
+      "negative_values": 0
+    }
+  ],
+  "note": "GEE polygon exports already had AOD QA masking and scale factor applied; missing values retained"
+}
