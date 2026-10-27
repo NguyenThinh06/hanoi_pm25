@@ -1,0 +1,36 @@
+{
+  "status": "local_artifacts_validated; pending team review",
+  "grid": {
+    "canonical_grid_rows": 3611,
+    "osm_grid_year_rows": 18050,
+    "osm_years": {
+      "2021": {
+        "rows": 3610,
+        "mean_road_density_km_km2": 4.478670120239258
+      },
+      "2022": {
+        "rows": 3610,
+        "mean_road_density_km_km2": 7.776789665222168
+      },
+      "2023": {
+        "rows": 3610,
+        "mean_road_density_km_km2": 8.219747543334961
+      },
+      "2024": {
+        "rows": 3610,
+        "mean_road_density_km_km2": 8.728456497192383
+      },
+      "2025": {
+        "rows": 3610,
+        "mean_road_density_km_km2": 9.423563003540039
+      }
+    }
+  },
+  "satellite": {
+    "grid_days": 6591860,
+    "osm_yearly_join_rows": 6591860,
+    "aod_non_null": 916056,
+    "no2_non_null": 2184005,
+    "viirs_daily_non_null": 6184753
+  }
+}

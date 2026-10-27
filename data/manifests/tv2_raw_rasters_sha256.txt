@@ -1,0 +1,3 @@
+70431bd74c2895ca994120c5fde4da26ad608c917e17f3e6c76654ef2e2eee59  data/raw/static/worldcover/hanoi_worldcover_2021.tif
+d69c10dde4c1cd671a110528c999c6e6d35459e7aee39cabae57810bd97a4715  data/raw/static/srtm/hanoi_srtm_elevation.tif
+f0a73325965a2dada8304e1a9873da87870861e42fdc66d6e264c2110f6e7536  data/raw/static/srtm/hanoi_srtm_slope.tif

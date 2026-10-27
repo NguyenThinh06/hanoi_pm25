@@ -1,0 +1,34 @@
+{
+  "version": "v1.1-tv2",
+  "grid_rows": 3611,
+  "grid_crs": "EPSG:3405",
+  "static_columns": [
+    "osm_primary_road_m",
+    "osm_road_density_km_km2",
+    "worldcover_builtup_ratio",
+    "worldcover_tree_ratio",
+    "worldcover_cropland_ratio",
+    "worldcover_water_ratio",
+    "dem_elevation_mean_m",
+    "dem_slope_mean_deg"
+  ],
+  "source_sha256": {
+    "data/raw/static/osm/vietnam-210101-free.shp.zip": "f57ccaadcebbcdf0df0509e67af4426ae316efa695a3bc4ece68dec283f35728",
+    "data/raw/static/worldcover/hanoi_worldcover_2021.tif": "70431bd74c2895ca994120c5fde4da26ad608c917e17f3e6c76654ef2e2eee59",
+    "data/raw/static/srtm/hanoi_srtm_elevation.tif": "d69c10dde4c1cd671a110528c999c6e6d35459e7aee39cabae57810bd97a4715",
+    "data/raw/static/srtm/hanoi_srtm_slope.tif": "f0a73325965a2dada8304e1a9873da87870861e42fdc66d6e264c2110f6e7536"
+  },
+  "worldcover_epoch": 2021,
+  "worldcover_ratio_denominator": "all valid classified 2021 pixels in full 1 km cell",
+  "raster_pixel_rule": "pixel centre inside full 1 km cell; no boundary-area weighting",
+  "osm_snapshot_utc": "2021-01-01T21:42:03Z",
+  "osm_temporal_note": "Canonical grid is the early-2021 baseline; fct_grid_osm_yearly carries OSM values for each calendar year",
+  "osm_primary_classes": [
+    "motorway",
+    "primary",
+    "trunk"
+  ],
+  "osm_primary_road_m": "sum of clipped lengths in metres",
+  "osm_road_density_km_km2": "sum of all clipped road lengths (km) / full cell area (1 km2)",
+  "grid_unknown_rule": "all new feature columns NULL"
+}
