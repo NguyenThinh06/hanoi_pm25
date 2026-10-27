@@ -3,7 +3,7 @@
 
 **Cơ quan quản trị:** Ban Kiến trúc Dữ liệu & Đảm bảo Chất lượng (Data Architecture & Quality Board)  
 **Phiên bản Contract:** `v3.1.0-draft`  
-**Ngày cập nhật:** 2026-10-26  
+**Ngày cập nhật:** 2026-10-27
 **Trạng thái pháp lý:** **DRAFT / UNDER REVIEW (BẢN THẢO ĐỀ XUẤT – CHỜ CÁC THÀNH VIÊN XÁC NHẬN)**  
 > [!IMPORTANT]
 > **Tuyên bố về Thẩm định và Phê duyệt:**  
@@ -91,12 +91,10 @@ Hệ thống thiết lập sự phân biệt rạch ròi giữa 3 trạng thái 
    - **Biểu diễn:** Lưu trữ chính xác số `0.0`.
    - **Xử lý:** Nghiêm cấm mọi hành vi chuyển đổi số `0.0` thành `NULL` hoặc ngược lại.
 
-### 3.2. Chính sách Mây che MNAR đối với Viễn thám (Missing Not At Random Policy)
-- Mùa đông Hà Nội (tháng 11 đến tháng 2) thường xuyên có mây tầng thấp và sương mù dày đặc che khuất bề mặt, khiến cảm biến MODIS MAIAC không thể đo được sol khí AOD.
-- **Quy tắc cấm kỵ:** **NGHIÊM CẤM TUYỆT ĐỐI VIỆC NỘI SUY KHÔNG GIAN HOẶC ĐIỀN TRUNG BÌNH (NO BLIND IMPUTATION)** đối với giá trị AOD trong những ngày bị mây che, vì mây che đi kèm với độ ẩm cao và điều kiện khí tượng tích tụ ô nhiễm đặc thù (vi phạm giả thiết Missing At Random).
-- **Quy định:**
-  - Cột `aod_047_mean` giữ nguyên giá trị `NULL`.
-  - Cột cờ chẩn đoán `is_aod_missing_mnar` gán giá trị `1` (nếu có đo được thì gán `0`).
+### 3.2. Chính sách dữ liệu AOD thiếu
+- AOD có thể thiếu do không có ảnh, pixel nguồn bị mask, hoặc bộ lọc QA loại pixel. Bản v1 chưa phân loại nguyên nhân cho từng ô–ngày và chưa kiểm định cơ chế Missing Not At Random (MNAR).
+- Giữ `aod_047_mean = NULL` khi không có số đo hợp lệ; không nội suy hay điền trung bình trước EDA.
+- Tên `is_aod_missing_mnar` được giữ để tương thích draft contract. Trong bản v1, cờ bằng `1` khi AOD là `NULL`, bằng `0` khi có giá trị. Cờ này **không chứng minh thiếu do mây hoặc MNAR**.
 
 ### 3.3. Bảng Ràng buộc Phạm vi Giá trị Vật lý và Cách Xử lý Vi phạm (Physical Ranges & SLA)
 
@@ -115,7 +113,7 @@ Hệ thống thiết lập sự phân biệt rạch ròi giữa 3 trạng thái 
 | `blh_mean_m` | `fct_grid_meteo_daily` | Mét | $[10.0, 4500.0]$ | **CRITICAL** | Lớp biên hành tinh không thể âm hoặc vượt tầng đối lưu thấp. |
 | `aod_047_mean` | `fct_grid_satellite_daily` | Vô thứ nguyên| $[0.0, 3.5]$ | **CRITICAL** | Kiểm tra scale factor `0.001` của MODIS MAIAC. |
 | `is_aod_missing_mnar`| `fct_grid_satellite_daily`| Cờ (0/1) | $\{0, 1\}$ | **BLOCKER** | Nhất quán: nếu `aod IS NULL` thì cờ bắt buộc $= 1$. |
-| `no2_tropospheric_mol_m2`| `fct_grid_satellite_daily`| $\text{mol}/\text{m}^2$| $[0.0, 0.001]$ | **WARNING** | Lọc theo cờ $QA \ge 0.75$ của Sentinel-5P. |
+| `no2_tropospheric_mol_m2`| `fct_grid_satellite_daily`| $\text{mol}/\text{m}^2$| Chưa chốt ngưỡng dưới | **WARNING** | GEE L3 đã lọc QA; giữ các giá trị thu hồi âm nhỏ để EDA. |
 | `worldcover_builtup_ratio`| `dim_grid_1km` | Tỷ lệ | $[0.0, 1.0]$ | **BLOCKER** | Tỷ lệ diện tích bắt buộc thuộc $[0, 1]$. |
 | `dem_elevation_mean_m`| `dim_grid_1km` | Mét | $[-10.0, 1400.0]$| **BLOCKER** | Đỉnh Ba Vì cao nhất Hà Nội $\approx 1.281\text{ m}$. |
 
@@ -160,11 +158,11 @@ Hệ thống quản lý trạng thái nạp dữ liệu theo 3 mức độ, **tu
 
 ## 5. ĐẶC TẢ NGHIỆM THU CHI TIẾT BÀN GIAO CHO TV2 VÀ TV3
 
-Phần này quy định các cam kết bàn giao đối với hai bảng Fact chưa hoàn thành. Mọi thiết kế ở đây được xây dựng dựa trên tài liệu Playbook và cần được TV2 và TV3 rà soát, phản biện và xác nhận chính thức:
+Phần này quy định cam kết bàn giao TV2 và TV3. TV2 đã tạo đầu ra trên máy và chờ TV1 review; fact khí tượng TV3 và mart chung chưa có trong repo hiện tại.
 
 ### 5.1. Bàn giao của Thành viên 2 (`hunganh` — Viễn thám & Đặc trưng tĩnh)
 
-#### 1. Bàn giao 1: Bảng chiều Lưới 1km đủ 15 biến tĩnh (`dim_grid_1km` v1.1)
+#### 1. Bàn giao 1: Bảng chiều Lưới 1km đủ 8 biến TV2 (`dim_grid_1km` v1.1)
 - **Đường dẫn bàn giao:** `data/core/dim_grid_1km.parquet` (phiên bản v1.1).
 - **Điều kiện tiên quyết:** TV1 đã bàn giao `dim_grid_1km.parquet` v1.0 (3.611 dòng, GeoParquet EPSG:3405).
 - **Tiêu chí nghiệm thu:**
@@ -172,6 +170,7 @@ Phần này quy định các cam kết bàn giao đối với hai bảng Fact ch
   - Bổ sung đủ các trường tĩnh: giao thông OSM (`osm_primary_road_m`, `osm_road_density_km_km2`), lớp phủ ESA WorldCover (`worldcover_builtup_ratio`, `worldcover_tree_ratio`, `worldcover_cropland_ratio`, `worldcover_water_ratio`), và địa hình DEM 30m (`dem_elevation_mean_m`, `dem_slope_mean_deg`).
   - 100% các ô phân tích thực tế không được chứa giá trị `NULL` ở các biến tĩnh địa hình/đô thị. Dòng ngoại lệ `grid_unknown` giữ `NULL` hoặc `-1`.
   - Giá trị các trường tỷ lệ bề mặt bắt buộc nằm trong khoảng $[0.0, 1.0]$. Độ cao nằm trong $[-10.0, 1400.0]\text{ m}$.
+  - Hai cột OSM không hậu tố trong `dim_grid_1km.parquet` là mốc đầu 2021 để tương thích TV1. Bảng `data/core/fct_grid_osm_yearly.parquet` có 18.050 khóa `(grid_id, year)` và hai cột OSM đúng năm. Mart ghép lưới theo `grid_id`, rồi ghép OSM theo `(grid_id, year)` của ngày. WorldCover 2021 và DEM giữ cố định. Đây là xấp xỉ theo năm, không phải lịch sử OSM chính xác từng ngày.
 
 #### 2. Bàn giao 2: Dữ liệu Fact Viễn thám Vệ tinh Hàng ngày (`fct_grid_satellite_daily`)
 - **Đường dẫn bàn giao:** `data/core/fct_grid_satellite_daily.parquet`.
@@ -181,12 +180,12 @@ Phần này quy định các cam kết bàn giao đối với hai bảng Fact ch
   - MODIS MAIAC AOD: `aod_047_mean` (hoặc `aod_550nm_mean`), `is_aod_missing_mnar`.
   - Sentinel-5P: `no2_tropospheric_mol_m2`.
   - VIIRS: `viirs_nightlight_rad`.
-- **CÁC QUYẾT ĐỊNH CÒN MỞ (OPEN DECISIONS) CẦN TV2 XÁC NHẬN CHÍNH THỨC:**
-  1. *Hình thức biểu diễn Fact:* TV2 cần xác nhận lưu trữ dưới dạng **Thưa (Sparse)** — chỉ lưu các ngày ô lưới thực sự có ảnh vệ tinh quan trắc được, hay dạng **Dày (Dense)** — chứa đủ 6.591.860 dòng kèm các giá trị `NULL`. (Data Architect khuyến nghị: Fact tầng Core nên lưu dạng Thưa để tiết kiệm dung lượng, việc làm đầy ma trận 6.591.860 dòng sẽ do tầng Marts đảm nhiệm khi `LEFT JOIN` với khung Spine).
-  2. *Quy chuẩn tên cột AOD:* Thống nhất chọn tên `aod_047_mean` (theo dải đo thực tế $0.47\,\mu\text{m}$ của MODIS Band 3) hay `aod_550nm_mean` (chuẩn hóa về $550\text{ nm}$).
-  3. *Phương pháp ánh xạ không gian:* Xác nhận thuật toán gán pixel từ ảnh gốc (độ phân giải 1km đối với AOD, 3.5x5.5km đối với S5P, 500m đối với VIIRS) sang các ô vuông 1km chuẩn của Hà Nội (Nearest Neighbor, Bilinear Interpolation, hay Zonal Statistics Area-weighted).
-  4. *Đồng bộ thời gian VIIRS Nightlight:* Dữ liệu VIIRS DNB trên GEE là dạng tổng hợp tháng (`MONTHLY_V1`). TV2 cần xác nhận thuật toán phát tán giá trị tháng (broadcast) cho tất cả các ngày trong tháng đó.
-  5. *Ngưỡng lọc cờ QA Sentinel-5P:* Xác nhận việc cố định ngưỡng $QA \ge 0.75$ loại bỏ mây và tuyết.
+- **Cách TV2 đã triển khai, cần TV1 review:**
+  1. Fact dạng **dày**, đủ 6.591.860 khóa và giữ `NULL` cho số đo thiếu.
+  2. Dùng `aod_047_mean` cho band MODIS 0,47 µm; không gọi là AOD 550 nm vì bản này chưa nội suy bước sóng.
+  3. GEE lấy trung bình theo polygon ô trên projection gốc của từng nguồn bằng `reduceRegions(ee.Reducer.mean())`; không dùng nearest neighbor hay khẳng định trung bình trọng số diện tích chính xác.
+  4. VIIRS tháng được lặp cho các ngày thuộc cùng tháng; `NULL` được giữ nguyên.
+  5. NO₂ L3 đã được GEE lọc QA theo sản phẩm; CSV L3 không có band `qa_value` để lọc thêm. Bộ lọc AOD `best quality` và `clear` do TV2 chọn cần review riêng.
 
 ---
 
@@ -216,33 +215,19 @@ Phần này quy định các cam kết bàn giao đối với hai bảng Fact ch
 
 ## 6. MA TRẬN PHÂN LOẠI VÀ THỰC THI CÁC BÀI KIỂM THỬ HỢP ĐỒNG (TESTING & VERIFICATION SUITE)
 
-Để đảm bảo tính khách quan và minh bạch tối đa, bảng dưới đây phân định rõ ràng giữa **những bài kiểm tra ĐÃ ĐƯỢC CODE THỰC THI trong `contract_verifier.py`** và **những bài kiểm tra CẦN BỔ SUNG TRONG TƯƠNG LAI**:
+Các tiêu chí dưới đây là yêu cầu nghiệm thu. Repo hiện **chưa có** `src/common/contract_verifier.py`; lệnh `python run.py contract` chưa thực thi được. `src.features.verify_tv2_handoff` chỉ kiểm tra các file TV2 trên máy.
 
 ### 6.1. Chi tiết Ma trận Kiểm định Chất lượng
 
-| Mã bài kiểm tra | Mục tiêu kiểm tra | Model áp dụng | Tiêu chuẩn đánh giá | Trạng thái hỗ trợ trong Code Verifier | Biện pháp khi phát hiện vi phạm |
-| :--- | :--- | :--- | :--- | :---: | :--- |
-| `CHK_SCHEMA_01` | Sự tồn tại của File và Thư mục | Mọi model | File Parquet tồn tại trên đĩa | **ĐÃ HỖ TRỢ** (`contract_verifier.py`) | Báo `PENDING` nếu upstream chưa giao; Báo `FAILED` nếu model bắt buộc bị thiếu. |
-| `CHK_SCHEMA_02` | Sự hiện diện của các cột bắt buộc v1.0 | `dim_grid_1km`, `dim_date`, `dim_station`, `fct_ground_truth_daily` | 100% cột giai đoạn v1.0 phải có trong file | **ĐÃ HỖ TRỢ** (`contract_verifier.py`) | Báo `FAILED`. Chặn commit Git ngay lập tức. |
-| `CHK_SCHEMA_03` | Kiểm tra đúng kiểu dữ liệu (Data Types) | Mọi model | Khớp chính xác kiểu Parquet (INT32, DOUBLE, VARCHAR...) | *CHƯA HỖ TRỢ TRONG CODE* (Verifier hiện chỉ check tên cột) | Cần cập nhật verifier để so sánh kiểu DuckDB DESCRIBE với YAML. |
-| `CHK_SCHEMA_04` | Cột Enrichment v1.1 từ TV2 | `dim_grid_1km` | Đủ 8-15 cột đặc trưng tĩnh đô thị | **ĐÃ HỖ TRỢ** (`contract_verifier.py`) | Báo `PENDING` do đang chờ TV2 bàn giao. |
-| `CHK_PK_NULL` | Tính Không-Null của Khóa chính | Mọi model | $0\%$ dòng có giá trị NULL ở các cột khóa chính | **ĐÃ HỖ TRỢ** (`contract_verifier.py`) | Báo `FAILED`. Dừng pipeline. |
-| `CHK_PK_UNIQUE` | Tính Duy nhất 100% của Khóa chính | `dim_grid_1km`, `dim_date`, `dim_station`, `fct_ground_truth_daily` | `COUNT(*) == COUNT(DISTINCT PK)` | *HỖ TRỢ MỘT PHẦN* (Chỉ mới viết SQL cho `mart_grid_daily_features`) | Bổ sung kiểm tra tính duy nhất cho tất cả các bảng Dims và Facts. |
-| `CHK_FK_ORPHAN` | Toàn vẹn Khóa ngoại (Zero Orphan FK) | `fct_ground_truth_daily` $\rightarrow$ `dim_station` | 100% khóa ngoại phải tồn tại ở bảng danh mục tương ứng | **ĐÃ HỖ TRỢ QUA SQL ASSERTION** (`assert_zero_orphan_station_join`) | Báo `FAILED`. Không cho phép có bản ghi mồ côi. |
-| `CHK_VOLUME_SPINE`| Khớp đúng quy mô Ma trận Spine $|S|$ | `mart_grid_daily_features` | Số dòng phải bằng chính xác $6.591.860\text{ dòng}$ | **ĐÃ HỖ TRỢ QUA SQL ASSERTION** (`assert_exact_spine_mart_volume`) | Báo `PENDING` (chờ hoàn thiện Marts). Báo `FAILED` nếu sai lệch dù chỉ 1 dòng. |
-| `CHK_ANTI_LEAK` | Rào chắn Chống Rò rỉ Nhãn (Label Firewall)| `mart_grid_daily_features` | Schema không được chứa cột khớp mẫu `*pm25*`, `*label*`, `*ground_truth*` | **ĐÃ HỖ TRỢ** (`contract_verifier.py`) | Báo `FAILED`. Hủy bỏ build Mart ngay lập tức. |
-| `CHK_QC_18H` | Ràng buộc nghiệp vụ ngày trạm hợp lệ | `fct_ground_truth_daily` | 100% bản ghi phải có `valid_hours_count >= 18` | **ĐÃ HỖ TRỢ QUA SQL ASSERTION** (`assert_ground_truth_strict_18h_rule`) | Báo `FAILED`. Kiểm tra lại bước tổng hợp Staging. |
-| `CHK_PHYSICS_RANGE`| Miền giá trị vật lý của các chỉ số | Mọi cột số đo | Nằm trong dải hợp lệ quy định tại Mục 3.3 | *CHƯA HỖ TRỢ TỰ ĐỘNG* (Verifier chưa đọc trường `range` trong YAML) | Cần bổ sung logic quét min/max theo cấu hình YAML. |
-| `CHK_NULL_TOLERANCE`| Tỷ lệ khuyết thiếu tối đa cho phép | `mart_grid_daily_features` (cột nhiệt độ) | Tỷ lệ `NULL` của `temp_2m_mean_c` $\le 5\%$ | **ĐÃ HỖ TRỢ QUA SQL ASSERTION** (`assert_meteo_null_rate_tolerance`) | Báo `PENDING` (chờ hoàn thiện Marts). |
-| `CHK_SPATIAL_CRS` | Kiểm tra Hệ quy chiếu GeoParquet | `dim_grid_1km` | Metadata GeoParquet phải ghi nhận `EPSG:3405` | *CHƯA HỖ TRỢ TRONG CODE* | Cần bổ sung kiểm tra cấu trúc metadata GeoParquet 1.1.0. |
+| Nhóm tiêu chí | Điều kiện | Hiện trạng kiểm tra |
+| :--- | :--- | :--- |
+| Lưới và OSM TV2 | Lưới 3.611 khóa duy nhất, `EPSG:3405`, 8 biến hợp lệ; bảng OSM 18.050 khóa ô–năm, mốc 2021 khớp lưới | `src.features.verify_tv2_handoff` kiểm tra trên file local. |
+| Fact vệ tinh TV2 | 6.591.860 khóa ô–ngày; không mồ côi; AOD cờ thiếu khớp `NULL`; staging và fact nhất quán | `src.features.verify_tv2_handoff` kiểm tra trên file local. |
+| Hợp đồng toàn dự án | Đúng kiểu dữ liệu YAML, QC trạm, vật lý khí tượng, chống rò rỉ nhãn, mart đủ dòng | Chưa có verifier tích hợp; TV1 và TV3 cần hoàn thiện và review. |
 
 ### 6.2. Phân biệt Báo Cáo Nghiệm thu: Hiện hữu vs Chưa bàn giao
 > [!WARNING]
-> **Quy định nghiêm cấm Báo cáo Sai lệch:**  
-> Hệ thống kiểm định `contract_verifier.py` và runner `run.py contract` **TUYỆT ĐỐI KHÔNG ĐƯỢC BÁO TRẠNG THÁI "PASSED" cho toàn bộ hồ chứa** khi mà các bảng của TV2 và TV3 chưa được bàn giao.  
-> - Các model hiện hữu của TV1 (`dim_grid_1km` v1.0, `dim_date`, `dim_station`, `fct_ground_truth_daily`) được xác nhận **PASSED (ĐẠT CHUẨN NỀN TẢNG)**.  
-> - Các model chưa bàn giao (`fct_grid_satellite_daily`, `fct_grid_meteo_daily`, `mart_grid_daily_features`) bắt buộc phải hiển thị trạng thái **PENDING (CHỜ BÀN GIAO UPSTREAM)**.  
-> - Chỉ khi toàn bộ 6 model đều tồn tại và 100% checks đạt chuẩn, bản báo cáo tổng kết mới được phép công bố kết quả **ALL MODELS PASSED**.
+> **Trạng thái hiện tại:** TV2 đã tạo và kiểm tra các file riêng trên máy, chờ TV1 nhận dữ liệu và review hợp đồng. `fct_grid_meteo_daily` và `mart_grid_daily_features` chưa có trong repo này. Không công bố “ALL MODELS PASSED” trước khi tất cả nguồn và các kiểm tra hợp đồng toàn dự án được hoàn thành.
 
 ---
 
@@ -250,5 +235,5 @@ Phần này quy định các cam kết bàn giao đối với hai bảng Fact ch
 
 - Xem chi tiết kiến trúc và luồng dữ liệu 4 tầng Medallion tại:  
   👉 **[Đặc tả Lược đồ Dữ liệu: docs/schema.md](./schema.md)**
-- Mã nguồn kiểm tra hợp đồng tự động: Xem [contract_verifier.py](../src/common/contract_verifier.py).
+- Kiểm tra đầu ra TV2: Xem [verify_tv2_handoff.py](../src/features/verify_tv2_handoff.py) và [bản bàn giao TV2](tv2_handoff.md). Verifier hợp đồng toàn dự án chưa có trong repo.
 - Kế hoạch phân công nhiệm vụ và lộ trình 6 giai đoạn: Xem [03_MASTER_EXECUTION_PLAN.md](./planning_v3/03_MASTER_EXECUTION_PLAN.md).

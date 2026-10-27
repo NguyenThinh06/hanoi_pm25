@@ -1,0 +1,4 @@
+duckdb==2.0.0
+pyarrow>=18
+shapely>=2
+pyproj>=3

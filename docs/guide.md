@@ -70,9 +70,9 @@ Theo tệp kê khai chuẩn `data/manifests/grid_manifest.json` và provenance `
 | Danh mục trạm mặt đất (`dim_station`) | **R / A** | I | I | Đã hoàn thành (15 dòng) |
 | Ingest chuỗi giờ OpenAQ thô & Staging QC trạm | **R / A** | I | I | Đã hoàn thành |
 | Bảng Fact mặt đất ngày (`fct_ground_truth_daily`) | **R / A** | I | I | Đã hoàn thành ($\ge 18\text{h}$) |
-| 15 Biến tĩnh đô thị (`dim_grid_1km` v1.1) | C | **R / A** | I | Đang thực hiện |
-| Ingest & Staging Viễn thám (MODIS, S5P, VIIRS) | I | **R / A** | C | Đang thực hiện |
-| Fact Viễn thám ô–ngày (`fct_grid_satellite_daily`) | C | **R / A** | I | Chờ TV2 xác nhận bàn giao |
+| 8 biến lưới TV2 (`dim_grid_1km` v1.1 và 5 file theo năm) | C | **R / A** | I | Đã tạo, chờ TV1 review |
+| Ingest & Staging Viễn thám (MODIS, S5P, VIIRS) | I | **R / A** | C | Đã tạo 2021–2025, chờ TV1 review |
+| Fact Viễn thám ô–ngày (`fct_grid_satellite_daily`) | C | **R / A** | I | Đã tạo, chờ TV1 review |
 | Ingest & Staging Khí tượng (ERA5-Land, BLH) | I | C | **R / A** | Đang thực hiện |
 | Bảng độ ẩm $RH$ giải phóng nút thắt Köhler cho TV1 | I | I | **R / A** | **Giao điểm khẩn cấp** |
 | Fact Khí tượng ô–ngày (`fct_grid_meteo_daily`) | C | I | **R / A** | Chờ TV3 xác nhận bàn giao |
@@ -92,7 +92,7 @@ flowchart LR
     TV1 -- "1. Bàn giao dim_grid_1km v1.0<br/>& dim_date.parquet" --> TV2
     TV1 -- "2. Bàn giao dim_grid_1km v1.0<br/>cho Native Pixel Mapping" --> TV3
     TV3 -- "3. BÀN GIAO GẤP BẢNG RH<br/>(stg_meteo_daily) mở khóa Köhler" --> TV1
-    TV2 -- "4. Bàn giao dim_grid_1km v1.1<br/>(đủ 15 biến tĩnh)" --> TV1
+    TV2 -- "4. Bàn giao dim_grid_1km v1.1<br/>(đủ 8 biến tĩnh)" --> TV1
     TV2 -- "5. Bàn giao fct_grid_satellite_daily" --> TV1
     TV3 -- "6. Bàn giao fct_grid_meteo_daily" --> TV2
     TV2 -- "7. Đóng gói mart_grid_daily_features<br/>(6.591.860 dòng sạch nhãn)" --> TV1
@@ -109,7 +109,7 @@ flowchart LR
   - Kiểm toán danh mục trạm OpenAQ (`src/ingest/audit_stations.py`) và tạo bảng `dim_station.parquet`.
   - Thu thập dữ liệu giờ thô OpenAQ (`src/ingest/fetch_ground_truth.py`), làm sạch chuỗi giờ (`src/features/qc_hourly_stations.py`) và tạo bảng Fact trạm ngày `fct_ground_truth_daily.parquet`.
   - Xây dựng bảng ghép nhãn huấn luyện `mart_station_matched.parquet`.
-- **Không phụ trách:** Thu thập ảnh vệ tinh MODIS/Sentinel-5P/VIIRS (của TV2); thu thập dữ liệu khí tượng ERA5-Land/BLH (của TV3); tính toán 15 biến tĩnh đô thị (của TV2).
+- **Không phụ trách:** Thu thập ảnh vệ tinh MODIS/Sentinel-5P/VIIRS (của TV2); thu thập dữ liệu khí tượng ERA5-Land/BLH (của TV3); tính toán 8 biến tĩnh đô thị đã liệt kê trong schema (của TV2).
 - **Phụ thuộc:** Chờ TV3 bàn giao bảng chuỗi giờ độ ẩm tương đối $RH$ (`stg_meteo_daily.parquet`) để kích hoạt công thức hiệu chỉnh ẩm $\kappa$-Köhler toàn diện cho các cảm biến Tier 2.
 
 ### 3.2. Danh sách Nguồn Dữ liệu TV1 Thu thập
@@ -202,15 +202,17 @@ openaq_8425     | 20210101 | grid_588000_2327000  | 21                | 55.30   
 
 ## 4. CẨM NANG DÀNH RIÊNG CHO THÀNH VIÊN 2: hunganh (ĐẶC TRƯNG TĨNH ĐÔ THỊ & VIỄN THÁM VỆ TINH)
 
+Xem [bản bàn giao TV2](tv2_handoff.md) để review file đầu ra, quy tắc xử lý, lệnh tái tạo và các quyết định còn mở. [Runbook GEE](satellite_gee_runbook.md) ghi chi tiết các đợt xuất và chẩn đoán dữ liệu nguồn.
+
 ### 4.1. Vai trò và Phạm vi của TV2
 - **Phụ trách:**
-  - Trích xuất 15 đặc trưng tĩnh đô thị (giao thông OpenStreetMap, lớp phủ ESA WorldCover 10m, địa hình NASA SRTM DEM 30m) vào `dim_grid_1km.parquet` v1.1.
+  - Trích xuất 8 đặc trưng đô thị đã liệt kê ở §4.4 (2 biến giao thông OpenStreetMap theo năm, 4 biến lớp phủ ESA WorldCover 2021 và 2 biến địa hình NASA SRTM DEM) vào các file `dim_grid_1km`.
   - Kiểm toán, thu thập và tiền xử lý viễn thám vệ tinh trên Google Earth Engine (MODIS MAIAC AOD, Sentinel-5P $NO_2$, VIIRS Nightlight).
-  - Áp dụng chính sách mây che MNAR và đóng gói `fct_grid_satellite_daily.parquet`.
+  - Giữ dữ liệu AOD thiếu là `NULL`, đánh dấu ngày thiếu để EDA tìm nguyên nhân, và đóng gói `fct_grid_satellite_daily.parquet`.
   - Phối hợp đóng gói Chợ Đặc trưng `mart_grid_daily_features.parquet` quy mô $6.591.860\text{ dòng}$.
 - **Không phụ trách:** Thu thập khí tượng ERA5-Land và tính độ ẩm $RH$ (của TV3); quản lý dữ liệu trạm quan trắc OpenAQ (của TV1).
 - **Phụ thuộc:**
-  - *Làm được ngay:* Kết nối GEE audit nguồn; tính toán 15 biến tĩnh đô thị trên nền `dim_grid_1km.parquet` v1.0 đã có sẵn từ TV1.
+  - *Làm được ngay:* Kết nối GEE audit nguồn; tính toán 8 biến tĩnh đô thị trên nền `dim_grid_1km.parquet` v1.0 đã có sẵn từ TV1.
   - *Chờ đợi:* Chờ TV3 hoàn tất `fct_grid_meteo_daily` để phối hợp thực hiện `LEFT JOIN` đóng gói `mart_grid_daily_features.parquet`.
 
 ### 4.2. Danh sách Nguồn Dữ liệu TV2 Thu thập
@@ -218,10 +220,11 @@ openaq_8425     | 20210101 | grid_588000_2327000  | 21                | 55.30   
 #### Nguồn 1: Mạng lưới Giao thông OpenStreetMap (OSM) (Bắt buộc)
 - **Cơ quan cung cấp:** Cộng đồng OpenStreetMap / Geofabrik Vietnam Extract.
 - **Link chính thức:** [Geofabrik Vietnam Shapefiles](https://download.geofabrik.de/asia/vietnam.html).
-- **Phương thức thu thập:** Tải file `vietnam-latest-free.shp.zip`, lọc lớp `gis_osm_roads_free_1.shp`.
+- **Phương thức thu thập đã triển khai:** Dùng các bản trích xuất Geofabrik đầu từng năm `vietnam-210101-free.shp.zip` đến `vietnam-250101-free.shp.zip`, lọc lớp `gis_osm_roads_free_1.shp`. `dim_grid_1km.parquet` v1.1 giữ 3.611 dòng và hai cột OSM không hậu tố của mốc 2021 để tương thích TV1. Bảng `fct_grid_osm_yearly.parquet` có 18.050 dòng, khóa `(grid_id, year)` và hai giá trị OSM đúng năm. Mart ghép lưới theo `grid_id`, rồi ghép OSM theo `(grid_id, year)` của ngày. Mốc đầu năm là xấp xỉ theo năm, không tái dựng mạng đường chính xác từng ngày. SHA-256 và thời điểm ảnh chụp được lưu trong các manifest tương ứng.
 - **Biến cần lấy:**
   - `osm_primary_road_m`: Chiều dài đường chính (motorway, trunk, primary) cắt qua từng ô lưới 1km (mét).
   - `osm_road_density_km_km2`: Tổng chiều dài toàn bộ các cấp đường trong ô chia cho diện tích ô ($\text{km}/\text{km}^2$).
+- **Lưu ý khi phân tích:** Snapshot đầu năm chỉ xấp xỉ mạng đường của cả năm; những ngày trước thời điểm chụp đầu tháng 01 có thể chứa thông tin đến sau vài giờ. Số đường được vẽ trên OSM cũng thay đổi theo mức độ đóng góp bản đồ, không chỉ theo xây dựng thực tế. Giữa các snapshot 2021 và 2022, mật độ đường trung bình của lưới tăng từ khoảng 4,48 lên 7,78 km/km²; cần xem xét hiệu ứng này trong EDA.
 - **Giấy phép:** Open Data Commons Open Database License (ODbL).
 
 #### Nguồn 2: Bản đồ Lớp phủ Bề mặt ESA WorldCover 10m (Bắt buộc)
@@ -248,20 +251,20 @@ openaq_8425     | 20210101 | grid_588000_2327000  | 21                | 55.30   
 - **Dataset ID trên GEE:** `MODIS/061/MCD19A2_GRANULES` (MODIS Terra/Aqua MAIAC Daily L2G Global 1km).
 - **Tài liệu chính thức:** [MCD19A2 v061 User Guide](https://lpdaac.usgs.gov/products/mcd19a2v061/).
 - **Band & Scale Factor:** Band `Optical_Depth_047` (hoặc nội suy bước sóng $550\text{ nm}$); nhân hệ số tỷ lệ `scale_factor = 0.001` để đưa về dải đo thực $[0.0, 3.5]$.
-- **Lọc mây & MNAR:** Giữ nguyên `NULL` khi bị mây che, bật cờ `is_aod_missing_mnar = 1`. Tuyệt đối không nội suy!
+- **Khuyết AOD:** Giữ nguyên `NULL`; cờ `is_aod_missing_mnar = 1` hiện đánh dấu thiếu số đo, chưa chứng minh mây che hay MNAR. Không nội suy trước EDA.
 
 #### Nguồn 5: Mật độ Cột Khí Tầng Đối lưu Sentinel-5P TROPOMI $NO_2$ (Bắt buộc)
 - **Cơ quan cung cấp:** Copernicus / ESA.
 - **Dataset ID trên GEE:** `COPERNICUS/S5P/OFFL/L3_NO2`.
 - **Tài liệu chính thức:** [Sentinel-5P TROPOMI User Guide](https://sentinels.copernicus.eu/web/sentinel/technical-guides/sentinel-5p/products-algorithms).
 - **Band thu thập:** `tropospheric_NO2_column_number_density` (đơn vị $\text{mol}/\text{m}^2$).
-- **Lọc chất lượng:** Bắt buộc lọc theo cờ `qa_value >= 0.75` (loại bỏ mây, tuyết và góc nghiêng lớn).
+- **Lọc chất lượng trên GEE:** Khi chuyển NO₂ L2 sang L3, GEE đã loại pixel có `qa_value < 0.75` cho band tầng đối lưu. Collection L3 không cung cấp band `qa_value` để lọc lần nữa; nếu cần tự áp ngưỡng khác, phải dùng dữ liệu L2 gốc.
 
 #### Nguồn 6: Bức xạ Ánh sáng Ban đêm VIIRS DNB (Bắt buộc)
 - **Cơ quan cung cấp:** NOAA / Colorado School of Mines.
 - **Dataset ID trên GEE:** `NOAA/VIIRS/DNB/MONTHLY_V1/VCMCFG`.
 - **Tài liệu chính thức:** [Earth Observation Group VIIRS Nighttime Light](https://eogdata.mines.edu/products/vnl/).
-- **Band & Đơn vị:** `avg_rad` (đơn vị $\text{nW}/(\text{cm}^2\cdot\text{sr})$).
+- **Band & Đơn vị:** `avg_rad` (đơn vị $\text{nW}/(\text{cm}^2\cdot\text{sr})$); dùng thêm `cf_cvg` để nhận biết pixel không có quan trắc hợp lệ.
 - **Quy tắc thời gian:** Lấy dữ liệu tổng hợp tháng, phát tán (broadcast) đồng nhất cho mọi ngày trong tháng đó.
 
 ### 4.3. Quy trình Thu thập Viễn thám trên Google Earth Engine (GEE)
@@ -269,7 +272,7 @@ openaq_8425     | 20210101 | grid_588000_2327000  | 21                | 55.30   
 2. **Kỹ thuật Chia khoảng (Chunking) Tránh Giới hạn Bộ nhớ:**
    - Chia 5 năm lịch thành các khoảng 3 tháng một lần (Quarterly Chunks, ví dụ: `2021-01-01` đến `2021-03-31`).
    - Sử dụng phương thức `ee.ImageCollection.reduceRegions()` hoặc truy vấn theo danh sách tọa độ tâm của 3.610 ô lưới.
-3. **Lưu trữ Tầng Raw Bronze:**
+3. **Lưu trữ Tầng Raw Bronze:** CSV v2 được xuất bằng `src/ingest/fetch_satellite_gee.js` trong GEE Code Editor, tải nguyên bản từ Drive vào `data/raw/earth_observation/exports/`, sau đó chạy `python -m src.ingest.ingest_satellite_csv` để kiểm tra khóa và ghi Parquet:
    - Dữ liệu thô tải từ GEE được lưu theo phân vùng:
      `data/raw/earth_observation/source=modis_aod/year=YYYY/quarter=Q/data.parquet`
      `data/raw/earth_observation/source=s5p_no2/year=YYYY/quarter=Q/data.parquet`
@@ -283,28 +286,30 @@ openaq_8425     | 20210101 | grid_588000_2327000  | 21                | 55.30   
 - **Khóa chính:** `grid_id`.
 - **Cấu trúc:** Giữ nguyên 6 cột v1.0 từ TV1 và nối thêm 8 cột tĩnh:
   `osm_primary_road_m`, `osm_road_density_km_km2`, `worldcover_builtup_ratio`, `worldcover_tree_ratio`, `worldcover_cropland_ratio`, `worldcover_water_ratio`, `dem_elevation_mean_m`, `dem_slope_mean_deg`.
+- **OSM theo năm:** `data/core/fct_grid_osm_yearly.parquet` có 18.050 dòng cho 3.610 ô thật × 5 năm, khóa `(grid_id, year)` và hai cột OSM từ snapshot đầu mỗi năm. `dim_grid_1km.parquet` giữ một dòng mỗi ô, OSM mốc 2021 và WorldCover/DEM cố định.
 
 #### Bảng Fact Viễn thám Hàng ngày: `data/core/fct_grid_satellite_daily.parquet`
 - **Hạt dữ liệu đề xuất:** Ô lưới – Ngày (`grid_id`, `date_id`).
 - **Khóa chính:** `(grid_id, date_id)`.
 - **Khóa ngoại:** `grid_id` $\rightarrow$ `dim_grid_1km`, `date_id` $\rightarrow$ `dim_date`.
-- **Hình thức lưu trữ:** **Lưu dạng Thưa (Sparse)** — Chỉ ghi nhận các cặp `(grid_id, date_id)` thực sự có vệ tinh chụp được.
+- **Hình thức lưu trữ bản v1:** **Dạng dày (Dense)** — đủ 6.591.860 cặp `(grid_id, date_id)` của TV1; số đo thiếu là `NULL`.
 - **Bảng cột:**
 
 | Tên cột | Kiểu dữ liệu | Đơn vị | Nullable | Mô tả & Công thức tạo | Ví dụ |
 | :--- | :--- | :---: | :---: | :--- | :--- |
 | `grid_id` | `VARCHAR` | Mã ô | **NO** | Mã định danh ô lưới $1\text{ km}$ | `'grid_584000_2324000'` |
 | `date_id` | `INT32` | Số nguyên | **NO** | Ngày quan trắc `YYYYMMDD` | `20210101` |
-| `aod_047_mean` | `FLOAT` | Vô thứ nguyên | YES | MODIS AOD nhân scale `0.001`; `NULL` khi bị mây che | `0.452` |
-| `is_aod_missing_mnar`| `INT32` | Cờ (0/1) | **NO** | `1` nếu AOD bị khuyết do mây; `0` nếu có số đo | `0` |
+| `aod_047_mean` | `FLOAT` | Vô thứ nguyên | YES | MODIS AOD nhân scale `0.001`; `NULL` khi không có số đo hợp lệ sau mask/QA | `0.452` |
+| `is_aod_missing_mnar`| `INT32` | Cờ (0/1) | **NO** | Tên cột kế thừa; `1` nếu AOD là `NULL`, `0` nếu có số đo; nguyên nhân sẽ đánh giá sau | `0` |
 | `no2_tropospheric_mol_m2`| `FLOAT` | $\text{mol}/\text{m}^2$| YES | S5P $NO_2$ tầng đối lưu lọc $QA \ge 0.75$ | `0.000185` |
 | `viirs_nightlight_rad` | `FLOAT` | $\text{nW}/(\text{cm}^2\cdot\text{sr})$| YES | VIIRS DNB ánh sáng ban đêm tổng hợp tháng | `34.82` |
 
 ### 4.5. Kế hoạch Thực hiện Từng bước của TV2
-- **Bước 1 (Tính biến tĩnh):** Viết module `src/features/extract_static_features.py` đọc `dim_grid_1km` v1.0, cắt lớp đường OSM và zonal stats WorldCover/DEM. Xuất `dim_grid_1km` v1.1. Bàn giao cho TV1 review.
-- **Bước 2 (Ingest vệ tinh):** Viết module `src/ingest/fetch_satellite_gee.py` chia chunk 3 tháng, truy vấn GEE, lưu Bronze Parquet.
-- **Bước 3 (Staging & Fact):** Lọc QA S5P, scale AOD, gán cờ MNAR, lưu `stg_satellite_daily.parquet` và `fct_grid_satellite_daily.parquet`.
+- **Bước 1 (Tính biến tĩnh):** Cài `requirements-static-features.txt`, chạy `python -m src.ingest.download_osm_snapshots` để tải và kiểm MD5 năm bản Geofabrik, rồi chạy `python -m src.features.extract_static_features` trên `dim_grid_1km` v1.0 (hoặc v1.1 để tính lại). Module dùng OSM đầu 2021, WorldCover 2021 và DEM để xuất 8 cột nền. Chạy `python -m src.features.build_osm_yearly` để xuất bảng ô–năm `fct_grid_osm_yearly.parquet` mà không nhân bản lưới.
+- **Bước 2 (Ingest vệ tinh):** Dùng `src/ingest/fetch_satellite_gee.js` để xuất CSV v2 theo quý từ GEE; chạy `python -m src.ingest.download_satellite_exports`, rồi `python -m src.ingest.ingest_satellite_csv` để lưu Bronze Parquet. Đã thực hiện 2021–2025; kiểm toán tại `data/manifests/satellite_bronze_v2.json`.
+- **Bước 3 (Staging & Fact):** Chạy `python -m src.features.build_satellite_daily` để `LEFT JOIN` Bronze vào toàn bộ 3.610 ô × 1.826 ngày. Giữ AOD/NO₂ trống là `NULL`, giữ NO₂ âm nhỏ, phát tán VIIRS trong đúng tháng; không scale hoặc lọc QA thêm vì CSV v2 đã làm trên GEE. Fact v1 lưu dạng dày đủ 6.591.860 dòng. `is_aod_missing_mnar = 1` hiện chỉ có nghĩa AOD trống, chưa xác định nguyên nhân hay cơ chế MNAR; sẽ đánh giá trong EDA. Đã tạo `data/staging/stg_satellite_daily.parquet` và `data/core/fct_grid_satellite_daily.parquet`.
 - **Bước 4 (Feature Marts):** Đóng gói `mart_grid_daily_features.parquet` cùng TV1.
+- **Kiểm tra gói TV2:** Chạy `python -m src.features.verify_tv2_handoff`; script ghi `data/manifests/tv2_handoff_validation.json` và cập nhật danh sách SHA-256 của file bàn giao. Việc này chỉ xác nhận đầu ra TV2 trên máy, chưa thay thế review hợp đồng toàn dự án.
 
 ---
 
@@ -431,7 +436,7 @@ Thuật toán ghép nối bằng DuckDB SQL:
 ```sql
 -- Sinh khung xương tích Descartes giữa ô phân tích thực và ngày thực
 WITH spine AS (
-    SELECT g.grid_id, d.date_id, d.date_actual AS date
+    SELECT g.grid_id, d.date_id, d.date_actual AS date, d.year
     FROM read_parquet('data/core/dim_grid_1km.parquet') g
     CROSS JOIN read_parquet('data/core/dim_date.parquet') d
     WHERE g.grid_id != 'grid_unknown' AND d.date_id != -1
@@ -455,15 +460,20 @@ SELECT
     sat.is_aod_missing_mnar,
     sat.no2_tropospheric_mol_m2,
     sat.viirs_nightlight_rad,
-    -- Đặc trưng tĩnh đô thị & địa hình từ dim_grid_1km (TV2)
-    g.osm_primary_road_m,
-    g.osm_road_density_km_km2,
+    -- OSM theo năm; WorldCover và DEM theo ô lưới cố định
+    osm.osm_primary_road_m,
+    osm.osm_road_density_km_km2,
     g.worldcover_builtup_ratio,
     g.worldcover_tree_ratio,
+    g.worldcover_cropland_ratio,
+    g.worldcover_water_ratio,
     g.dem_elevation_mean_m,
     g.dem_slope_mean_deg
 FROM spine s
-LEFT JOIN read_parquet('data/core/dim_grid_1km.parquet') g ON s.grid_id = g.grid_id
+LEFT JOIN read_parquet('data/core/dim_grid_1km.parquet') g
+    ON s.grid_id = g.grid_id
+LEFT JOIN read_parquet('data/core/fct_grid_osm_yearly.parquet') osm
+    ON s.grid_id = osm.grid_id AND s.year = osm.year
 LEFT JOIN read_parquet('data/core/fct_grid_meteo_daily.parquet') m ON s.grid_id = m.grid_id AND s.date_id = m.date_id
 LEFT JOIN read_parquet('data/core/fct_grid_satellite_daily.parquet') sat ON s.grid_id = sat.grid_id AND s.date_id = sat.date_id;
 ```
@@ -493,13 +503,19 @@ Khi dữ liệu được nghiệm thu trên local, các file Parquet kích thư�
 Google Drive: HANOI_PM25_DATA_LAKEHOUSE/
 ├── manifests/
 │   ├── grid_manifest.json                          (TV1 - Đã có)
-│   └── checksums_sha256.txt                        (Mã băm SHA-256 toàn bộ file)
+│   ├── static_features_v1_1.json                   (TV2: nguồn WorldCover, OSM 2021, DEM)
+│   ├── osm_yearly_v1.json                          (TV2: năm snapshot và nguồn OSM)
+│   ├── satellite_bronze_v2.json                    (TV2: kiểm toán dữ liệu GEE)
+│   ├── satellite_daily_v1.json                     (TV2: số dòng và độ phủ vệ tinh)
+│   ├── tv2_handoff_validation.json                  (TV2: kiểm tra khóa, CRS, số đo)
+│   └── tv2_checksums_sha256.txt                    (TV2: SHA-256 các file bàn giao)
 ├── reference/
 │   ├── hanoi_boundary.geojson                      (TV1 - Đã có)
 │   ├── hanoi_boundary.provenance.json              (TV1 - Đã có)
 │   └── station_registry.json                       (TV1 - Đã có)
 ├── core/
 │   ├── dim_grid_1km.parquet                        (TV1 bàn giao v1.0 / TV2 cập nhật v1.1)
+│   ├── fct_grid_osm_yearly.parquet                 (TV2: OSM theo ô–năm)
 │   ├── dim_date.parquet                            (TV1 - Đã có)
 │   ├── dim_station.parquet                         (TV1 - Đã có)
 │   ├── fct_ground_truth_daily.parquet              (TV1 - Đã có)
@@ -517,6 +533,7 @@ Google Drive: HANOI_PM25_DATA_LAKEHOUSE/
 
 ### 7.3. Quy trình Tạo Mã Băm Checksum khi Bàn giao
 Mỗi khi upload một tệp dữ liệu lên Google Drive, thành viên bàn giao phải tạo mã băm SHA-256 tương ứng bằng PowerShell hoặc Bash:
+Với gói TV2, `python -m src.features.verify_tv2_handoff` đã tạo `data/manifests/tv2_checksums_sha256.txt`; sau khi chuyển file, chạy `sha256sum -c data/manifests/tv2_checksums_sha256.txt` từ thư mục gốc để kiểm tra.
 ```powershell
 # Tạo mã băm SHA-256 trên Windows PowerShell
 Get-FileHash -Algorithm SHA256 data/core/fct_grid_satellite_daily.parquet
@@ -532,10 +549,10 @@ Bảng đối chiếu 5 mâu thuẫn then chốt giữa mã nguồn thực tế 
 
 | Mâu thuẫn phát hiện | Hiện trạng trong Playbook cũ | Hiện trạng thực tế trong Code & Manifest | Phương án chốt của Data Architect |
 | :--- | :--- | :--- | :--- |
-| **1. Trách nhiệm Ground Truth** | Ghi TV2 chịu trách nhiệm Ground Truth & QC. | Code ingest, QC trạm do TV1 triển khai 100%. | **Chốt TV1 toàn quyền phụ trách Ground Truth.** TV2 tập trung toàn lực vào vệ tinh và 15 biến tĩnh đô thị. |
+| **1. Trách nhiệm Ground Truth** | Ghi TV2 chịu trách nhiệm Ground Truth & QC. | Code ingest, QC trạm do TV1 triển khai 100%. | **Chốt TV1 toàn quyền phụ trách Ground Truth.** TV2 tập trung vào vệ tinh và 8 biến tĩnh đô thị đã xác định trong schema. |
 | **2. Số ô lưới $N_{\text{GRID}}$** | Ghi ước tính $\approx 3.360\text{ ô}$ (theo diện tích $3.359,77\text{ km}^2$). | `spatial_spine.py` cắt `intersects` ra đúng **3.610 ô phân tích thực tế**. | **Khóa cứng $N_{\text{GRID}} = 3.610\text{ ô}$** trong manifest. Toàn bộ code test và marts phải đọc động từ manifest này. |
 | **3. Quy mô Khung Marts $|S|$** | Ghi ước tính $\approx 6,1\text{ triệu dòng}$. | $3.610\text{ ô} \times 1.826\text{ ngày} = \mathbf{6.591.860\text{ dòng}}$. | **Khóa cứng $|S| = 6.591.860\text{ dòng}$**. Đánh trượt mọi bản build Marts nếu thừa hoặc thiếu dù chỉ 1 dòng. |
-| **4. Biểu diễn Fact Vệ tinh** | Yêu cầu Fact vệ tinh phải đủ 6,59 triệu dòng. | Dữ liệu AOD khuyết 70–80% vào mùa đông do mây che. | **Fact vệ tinh lưu dạng Thưa (Sparse)** để tối ưu tài nguyên. Việc làm đầy 6.591.860 dòng do tầng Marts đảm nhiệm khi `LEFT JOIN`. |
+| **4. Biểu diễn Fact Vệ tinh** | Yêu cầu Fact vệ tinh phải đủ 6,59 triệu dòng. | AOD khuyết nhiều và nguyên nhân chưa được phân loại cho mọi ngày. | **Bản TV2 v1 lưu dạng Dày (Dense)** đủ 6.591.860 ô–ngày; giữ `NULL` để EDA sau khi toàn bộ nguồn hoàn chỉnh. |
 | **5. Phê duyệt Hợp đồng** | Tự gắn nhãn "RATIFIED & FORMALLY BINDING". | Hai bảng Fact cốt lõi chưa hoàn thành, các tham số chưa chốt. | **Chuyển hợp đồng về trạng thái DRAFT**. Hợp đồng chỉ được coi là Ratified khi TV2 và TV3 ký duyệt các cam kết bàn giao. |
 
 ---

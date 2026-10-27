@@ -33,7 +33,7 @@ Dự án HANOI_PM25 xây dựng hồ chứa dữ liệu không-thời gian phụ
    - Khung này **loại trừ cả hai dòng ngoại lệ** (`grid_unknown` và `date_id = -1`).
 5. **Phân công Trách nhiệm Rõ ràng (RACI Ownership):**
    - **Thành viên 1 (`ngthinh06` - TV1):** Lưới không gian (`dim_grid_1km` v1.0), Trục ngày (`dim_date`), Danh mục trạm (`dim_station`), Ingestion/QC chuỗi giờ trạm và Dữ liệu quan trắc mặt đất (`fct_ground_truth_daily`).
-   - **Thành viên 2 (`hunganh` - TV2):** Trích xuất 15 đặc trưng tĩnh đô thị (`dim_grid_1km` v1.1), Viễn thám vệ tinh MODIS/Sentinel-5P/VIIRS (`fct_grid_satellite_daily`), Đóng gói Star Schema & Feature Marts (`mart_grid_daily_features`).
+   - **Thành viên 2 (`hunganh` - TV2):** Trích xuất 8 đặc trưng tĩnh đô thị được liệt kê trong bảng `dim_grid_1km` v1.1, Viễn thám vệ tinh MODIS/Sentinel-5P/VIIRS (`fct_grid_satellite_daily`), Đóng gói Star Schema & Feature Marts (`mart_grid_daily_features`).
    - **Thành viên 3 (`minh` - TV3):** Tái phân tích khí tượng ERA5-Land & BLH (`fct_grid_meteo_daily`), Khử tích lũy lượng mưa, Tính gió vô hướng và độ ẩm tương đối ($RH$).
 
 ---
@@ -52,23 +52,24 @@ flowchart TD
 
     subgraph S_RAW ["TẦNG RAW / BRONZE (data/raw/)"]
         RAW_STN["data/raw/ground_truth/source=openaq/<br/>Hive Partitions (Year/Month)<br/>Owner: TV1"]
-        RAW_SAT["data/raw/satellite/<br/>MODIS AOD, S5P NO2, VIIRS<br/>Owner: TV2 (Dự kiến)"]
+        RAW_SAT["data/raw/earth_observation/<br/>MODIS AOD, S5P NO2, VIIRS<br/>Owner: TV2 (Đã tạo)"]
         RAW_MET["data/raw/meteo/<br/>ERA5-Land 45 native cells, BLH 8 cells<br/>Owner: TV3 (Dự kiến)"]
     end
 
     subgraph S_STG ["TẦNG STAGING / SILVER (data/staging/)"]
         STG_HR["stg_ground_truth_hourly.parquet<br/>Chuẩn hóa UTC+7, Hampel, Flatline<br/>Owner: TV1"]
         STG_STN_D["stg_ground_truth_daily.parquet<br/>Gom ngày mọi trạm (kèm is_valid_day)<br/>Owner: TV1"]
-        STG_SAT_D["stg_satellite_daily.parquet<br/>Lọc QA >= 0.75, cờ MNAR AOD<br/>Owner: TV2 (Đề xuất)"]
+        STG_SAT_D["stg_satellite_daily.parquet<br/>CSV GEE v2, metadata nguồn, cờ AOD thiếu<br/>Owner: TV2 (Đã tạo)"]
         STG_MET_D["stg_meteo_daily.parquet<br/>Khử tích lũy mưa, Gió scalar & P, RH<br/>Owner: TV3 (Đề xuất)"]
     end
 
     subgraph S_CORE ["TẦNG CORE STAR SCHEMA / GOLD (data/core/)"]
         DIM_G["dim_grid_1km.parquet<br/>3.611 dòng (3.610 thật + 1 unknown)<br/>GeoParquet EPSG:3405<br/>Owner: TV1 (v1.0) / TV2 (v1.1)"]
+        FCT_OSM["fct_grid_osm_yearly.parquet<br/>18.050 ô–năm, OSM đúng năm<br/>Owner: TV2 (Đã tạo)"]
         DIM_D["dim_date.parquet<br/>1.827 dòng (1.826 thật + 1 unknown)<br/>Mùa Hà Nội & Đốt rơm rạ<br/>Owner: TV1"]
         DIM_S["dim_station.parquet<br/>15 dòng (14 thật + 1 unknown)<br/>Tier, Tọa độ, Grid mapping<br/>Owner: TV1"]
         FCT_GT["fct_ground_truth_daily.parquet<br/>Grain: (station_id, date_id)<br/>Lọc nghiêm ngặt valid_hours >= 18h<br/>Owner: TV1"]
-        FCT_SAT["fct_grid_satellite_daily.parquet<br/>Grain đề xuất: (grid_id, date_id)<br/>AOD, NO2, VIIRS, cờ MNAR<br/>Owner: TV2 (Chờ chốt)"]
+        FCT_SAT["fct_grid_satellite_daily.parquet<br/>Grain: (grid_id, date_id)<br/>AOD, NO2, VIIRS, cờ AOD thiếu<br/>Owner: TV2 (Đã tạo; chờ review)"]
         FCT_MET["fct_grid_meteo_daily.parquet<br/>Grain đề xuất: (grid_id, date_id)<br/>T2m, RH, Mưa, Gió, Khí áp, BLH<br/>Owner: TV3 (Chờ chốt)"]
     end
 
@@ -93,6 +94,7 @@ flowchart TD
     STG_MET_D -.->|RH unblocks Köhler| STG_STN_D
 
     DIM_G --> MART_FEAT
+    FCT_OSM --> MART_FEAT
     DIM_D --> MART_FEAT
     FCT_SAT --> MART_FEAT
     FCT_MET --> MART_FEAT
@@ -112,14 +114,15 @@ flowchart TD
 | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :---: | :---: |
 | `grid_manifest.json` | Metadata | JSON | Toàn dự án | N/A | N/A | `data/manifests/grid_manifest.json` | TV1 | **Đã triển khai** |
 | `dim_grid_1km` (v1.0) | Core Dim | GeoParquet 1.1.0 | 1 ô lưới 1km | `grid_id` | N/A | `data/core/dim_grid_1km.parquet` | TV1 | **Đã triển khai** |
-| `dim_grid_1km` (v1.1) | Core Dim | GeoParquet 1.1.0 | 1 ô lưới 1km | `grid_id` | N/A | `data/core/dim_grid_1km.parquet` | TV2 | **Đang thực hiện** |
+| `dim_grid_1km` (v1.1) | Core Dim | GeoParquet 1.1.0 | 1 ô lưới 1km | `grid_id` | N/A | `data/core/dim_grid_1km.parquet` | TV2 | **Đã tạo; 8 biến nền, OSM mốc 2021** |
+| `fct_grid_osm_yearly` | Core | Parquet | 1 ô lưới – năm | `(grid_id, year)` | `grid_id` | `data/core/fct_grid_osm_yearly.parquet` | TV2 | **Đã tạo; 2 cột OSM đúng năm** |
 | `dim_date` | Core Dim | Parquet | 1 ngày lịch | `date_id` | N/A | `data/core/dim_date.parquet` | TV1 | **Đã triển khai** |
 | `dim_station` | Core Dim | Parquet | 1 trạm quan trắc | `station_id` | `grid_id` | `data/core/dim_station.parquet` | TV1 | **Đã triển khai** |
 | `stg_ground_truth_hourly` | Staging | Parquet | Trạm – Giờ UTC | `(station_id, datetime_utc)` | `grid_id` | `data/staging/stg_ground_truth_hourly.parquet` | TV1 | **Đã triển khai** |
 | `stg_ground_truth_daily` | Staging | Parquet | Trạm – Ngày | `(station_id, date_id)` | `station_id`, `date_id`, `grid_id` | `data/staging/stg_ground_truth_daily.parquet` | TV1 | **Đã triển khai** |
 | `fct_ground_truth_daily` | Core Fact | Parquet | Trạm – Ngày ($\ge 18\text{h}$) | `(station_id, date_id)` | `station_id`, `date_id`, `grid_id` | `data/core/fct_ground_truth_daily.parquet` | TV1 | **Đã triển khai** |
-| `stg_satellite_daily` | Staging | Parquet | Pixel/Ô – Ngày | Chờ TV2 xác nhận | `date_id` | `data/staging/stg_satellite_daily.parquet` | TV2 | *Đề xuất / Chưa có* |
-| `fct_grid_satellite_daily`| Core Fact | Parquet | Ô – Ngày (Đề xuất) | `(grid_id, date_id)` | `grid_id`, `date_id` | `data/core/fct_grid_satellite_daily.parquet` | TV2 | *Đề xuất / Chờ TV2 chốt* |
+| `stg_satellite_daily` | Staging | Parquet | Ô – Ngày | `(grid_id, date_id)` | `grid_id`, `date_id` | `data/staging/stg_satellite_daily.parquet` | TV2 | **Đã tạo, 6.591.860 dòng** |
+| `fct_grid_satellite_daily`| Core Fact | Parquet | Ô – Ngày, dạng dày | `(grid_id, date_id)` | `grid_id`, `date_id` | `data/core/fct_grid_satellite_daily.parquet` | TV2 | **Đã tạo, 6.591.860 dòng; chờ review** |
 | `stg_meteo_daily` | Staging | Parquet | Pixel/Ô – Ngày | Chờ TV3 xác nhận | `date_id` | `data/staging/stg_meteo_daily.parquet` | TV3 | *Đề xuất / Chưa có* |
 | `fct_grid_meteo_daily` | Core Fact | Parquet | Ô – Ngày (Đề xuất) | `(grid_id, date_id)` | `grid_id`, `date_id` | `data/core/fct_grid_meteo_daily.parquet` | TV3 | *Đề xuất / Chờ TV3 chốt* |
 | `mart_grid_daily_features`| Platinum Mart | Parquet | Ô – Ngày phân tích | `(grid_id, date_id)` | `grid_id`, `date_id` | `data/marts/mart_grid_daily_features.parquet` | TV2 / TV1 | *Thiết kế chuẩn / Chờ upstream* |
@@ -234,15 +237,15 @@ flowchart TD
 - **Khóa ngoại:**
   - `grid_id` $\rightarrow$ `dim_grid_1km(grid_id)`
   - `date_id` $\rightarrow$ `dim_date(date_id)`
-- **Trạng thái:** **ĐỀ XUẤT THIẾT KẾ (PROPOSED - CHỜ TV2 XÁC NHẬN CHÍNH THỨC)**. TV2 có quyền xác nhận hình thức biểu diễn (dạng thưa chỉ chứa ngày có ảnh hay dạng ma trận đầy đủ kèm NULL).
+- **Trạng thái:** TV2 đã tạo bản v1 dạng dày, đủ 6.591.860 ô–ngày; các giá trị thiếu giữ `NULL`. Đầu ra còn chờ review hợp đồng trước khi đóng gói mart.
 
 | Tên cột | Kiểu dữ liệu | Đơn vị | Nullable | Giai đoạn | Ý nghĩa nghiệp vụ dự kiến |
 | :--- | :--- | :--- | :---: | :---: | :--- |
 | `grid_id` | `VARCHAR` | Mã ô lưới | **NO** | v1.0 (TV2) | Mã ô lưới 1km phân tích. |
 | `date_id` | `INT32` | Số nguyên | **NO** | v1.0 (TV2) | Ngày quan trắc vệ tinh (`YYYYMMDD`). |
-| `aod_047_mean` *(hoặc `aod_550nm_mean`)* | `FLOAT` | Không thứ nguyên | YES | v1.0 (TV2) | Độ dày quang học sol khí AOD từ MODIS MAIAC (đã nhân scale factor `0.001`, dải $[0.0, 3.5]$). `NULL` khi bị mây che. |
-| `is_aod_missing_mnar` | `INT32` | Cờ (0/1) | **NO** | v1.0 (TV2) | Cờ chẩn đoán khuyết thiếu phi ngẫu nhiên do mây che (MNAR): `1` nếu AOD bị khuyết do mây/sương mù; `0` nếu quan trắc được bình thường. |
-| `no2_tropospheric_mol_m2` | `FLOAT` | $\text{mol}/\text{m}^2$ | YES | v1.0 (TV2) | Mật độ cột khí tầng đối lưu $NO_2$ từ Sentinel-5P (chỉ lấy pixel có $QA \ge 0.75$, dải $[0.0, 0.001]$). |
+| `aod_047_mean` | `FLOAT` | Không thứ nguyên | YES | v1.0 (TV2) | AOD 0,47 µm từ MODIS MAIAC (đã nhân scale factor `0.001`, dải $[0.0, 3.5]$). `NULL` khi không có số đo hợp lệ sau mask/QA. |
+| `is_aod_missing_mnar` | `INT32` | Cờ (0/1) | **NO** | v1.0 (TV2) | Tên cột kế thừa hợp đồng; bản v1 dùng `1` khi AOD là `NULL`, `0` khi có số đo. Chưa xác minh nguyên nhân mây hay cơ chế MNAR. |
+| `no2_tropospheric_mol_m2` | `FLOAT` | $\text{mol}/\text{m}^2$ | YES | v1.0 (TV2) | Mật độ cột khí tầng đối lưu $NO_2$ từ Sentinel-5P; GEE đã lọc pixel L3 theo QA. Giữ giá trị thu hồi âm nhỏ, sẽ đánh giá trong EDA. |
 | `viirs_nightlight_rad` | `FLOAT` | $\text{nW}/\text{cm}^2/\text{sr}$ | YES | v1.0 (TV2) | Bức xạ ánh sáng ban đêm VIIRS DNB (phản ánh hoạt động kinh tế/đô thị ban đêm, dải $[0.0, 300.0]$). |
 
 ---
@@ -285,13 +288,13 @@ flowchart TD
 - **Quy tắc Ghép nối Không làm rơi dòng (Zero-Drop Left Join):**
   Khung xương được sinh ra từ tích Descartes của các ô thực và các ngày thực:
   $$\text{Spine} = \pi_{\text{grid\_id}}(\sigma_{\text{grid\_id} \neq \text{'grid\_unknown'}}(\text{dim\_grid\_1km})) \times \pi_{\text{date\_id}}(\sigma_{\text{date\_id} \neq -1}(\text{dim\_date}))$$
-  Sau đó thực hiện `LEFT JOIN` với bảng đặc trưng tĩnh, `fct_grid_meteo_daily` và `fct_grid_satellite_daily`. Mọi trường thiếu dữ liệu tự động nhận giá trị `NULL`. **Nghiêm cấm mọi thao tác `INNER JOIN` hay lọc `DROP` dòng trên bảng này.**
+  Sau đó thực hiện `LEFT JOIN` với `dim_grid_1km` theo `grid_id` để lấy WorldCover/DEM và với `fct_grid_osm_yearly` theo `(grid_id, year)` để lấy OSM đúng năm, rồi ghép `fct_grid_meteo_daily` và `fct_grid_satellite_daily`. Mọi trường thiếu dữ liệu tự động nhận giá trị `NULL`. **Nghiêm cấm mọi thao tác `INNER JOIN` hay lọc `DROP` dòng trên bảng này.**
 
 Danh mục cột chuẩn hóa Whitelist của `mart_grid_daily_features`:
 1. **Khóa liên kết:** `grid_id` (`VARCHAR`), `date_id` (`INT32`), `date` (`DATE`).
 2. **Khí tượng (từ TV3):** `temp_2m_mean_c`, `dewpoint_2m_mean_c`, `rh_mean_pct`, `precip_daily_mm`, `wind_speed_scalar_ms`, `wind_persistence`, `surface_pressure_hpa`, `blh_mean_m`, `blh_min_m`.
 3. **Viễn thám (từ TV2):** `aod_047_mean`, `is_aod_missing_mnar`, `no2_tropospheric_mol_m2`, `viirs_nightlight_rad`.
-4. **Đặc trưng tĩnh đô thị & Địa hình (từ TV2):** `osm_primary_road_m`, `osm_road_density_km_km2`, `worldcover_builtup_ratio`, `worldcover_tree_ratio`, `dem_elevation_mean_m`, `dem_slope_mean_deg`.
+4. **Đường sá theo năm và đặc trưng tĩnh (từ TV2):** Ghép `fct_grid_osm_yearly.parquet` theo `(grid_id, year)` để lấy `osm_primary_road_m`, `osm_road_density_km_km2` của đúng năm; ghép `dim_grid_1km.parquet` theo `grid_id` để lấy WorldCover 2021 và DEM.
 
 ---
 
@@ -400,7 +403,7 @@ Các cơ chế sau đã được thiết kế trong tài liệu kiến trúc nh�
      - `_ingested_at_utc`: Thời điểm ghi nhận bản ghi (chuẩn ISO-8601 UTC).
      - `_source_file`: Đường dẫn file gốc hoặc tên phân vùng API.
 3. **Lưu trữ Kết Quả Kiểm Định Chất Lượng (Quality Results Logging):**
-   - *Đề xuất:* Thay vì chỉ in báo cáo ra màn hình terminal từ `contract_verifier.py`, cần tự động kết xuất kết quả kiểm tra từng lần chạy vào artifact `data/manifests/quality_audit_log.parquet` (hoặc JSON) để lưu trữ lịch sử kiểm định phục vụ đối soát CI/CD.
+   - *Đề xuất:* Khi có verifier hợp đồng toàn dự án, lưu lịch sử kiểm định vào `data/manifests/quality_audit_log.parquet` (hoặc JSON) để đối soát CI/CD. Hiện TV2 ghi riêng `tv2_handoff_validation.json`.
 4. **Bảng Ánh Xạ Khử Trùng & Bản Ghi Bị Thay Thế (Duplicate & Replacement Audit Mapping):**
    - *Đề xuất:* Khi API OpenAQ hoặc Copernicus cập nhật dữ liệu hồi tố (re-analysis revision), hệ thống cần một bảng ghi nhận lịch sử thay thế: `data/staging/stg_revision_audit.parquet` lưu vết cặp `(business_key, old_row_hash, new_row_hash, replaced_at_utc)`.
 

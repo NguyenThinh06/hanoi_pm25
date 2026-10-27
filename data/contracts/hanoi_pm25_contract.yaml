@@ -29,7 +29,7 @@ stakeholders:
   - role: "Urban Static & Satellite Features Owner (TV2)"
     owner: "hunganh"
     responsibilities:
-      - "Trich xuat 15 bien tinh do thi (ESA WorldCover, OSM Road Network, NASA SRTM DEM) vao dim_grid_1km (Giai doan v1.1)."
+      - "Trich xuat 8 bien tinh do thi da liet ke (ESA WorldCover, OSM Road Network, NASA SRTM DEM) vao dim_grid_1km (Giai doan v1.1)."
       - "Thu thap va noi suy du lieu ve tinh quang hoc MODIS MAIAC AOD 550nm (fct_grid_satellite_daily)."
       - "Thuc thi Cong chat luong du lieu (Quality Gate) va Kiem thu dot bien (Mutation Testing)."
 
@@ -109,7 +109,7 @@ models:
         stage: "v1.0"
         description: "Hinh hoc WKB cua o luoi 1000m x 1000m."
 
-      # Tầng 2: 15 Biến tĩnh đô thị bổ sung (Enrichment v1.1 - Do TV2 bàn giao)
+      # Tầng 2: 8 biến tĩnh đô thị bổ sung (Enrichment v1.1 - Do TV2 bàn giao)
       worldcover_builtup_ratio:
         type: "FLOAT"
         nullable: true
@@ -122,6 +122,12 @@ models:
         stage: "v1.1_tv2"
         range: [0.0, 1.0]
         description: "Ty le dien tich cay xanh tu ESA WorldCover 10m."
+      worldcover_cropland_ratio:
+        type: "FLOAT"
+        nullable: true
+        stage: "v1.1_tv2"
+        range: [0.0, 1.0]
+        description: "Ty le dat canh tac tu ESA WorldCover 10m."
       worldcover_water_ratio:
         type: "FLOAT"
         nullable: true
@@ -133,13 +139,13 @@ models:
         nullable: true
         stage: "v1.1_tv2"
         range: [0.0, null]
-        description: "Khoang cach ngan nhat toi truc duong chinh (m)."
+        description: "Tong chieu dai duong motorway, trunk, primary cat qua o 1 km (m); dim_grid_1km la moc 2021, fct_grid_osm_yearly mang gia tri dung nam."
       osm_road_density_km_km2:
         type: "FLOAT"
         nullable: true
         stage: "v1.1_tv2"
         range: [0.0, 100.0]
-        description: "Mat do duong bo tren dien tich o (km/km2)."
+        description: "Mat do duong bo tren dien tich o (km/km2); dim_grid_1km la moc 2021, fct_grid_osm_yearly mang gia tri dung nam."
       dem_elevation_mean_m:
         type: "FLOAT"
         nullable: true
@@ -152,6 +158,30 @@ models:
         stage: "v1.1_tv2"
         range: [0.0, 60.0]
         description: "Do doc dia hinh trung binh (do)."
+
+  fct_grid_osm_yearly:
+    description: "Hai bien duong OSM theo o luoi va nam; ghep voi dim_grid_1km va nam cua dim_date."
+    path: "data/core/fct_grid_osm_yearly.parquet"
+    format: "parquet"
+    primaryKey: ["grid_id", "year"]
+    expectedRowCount: 18050
+    columns:
+      grid_id:
+        type: "VARCHAR"
+        nullable: false
+        description: "Khoa ngoai toi dim_grid_1km; khong gom grid_unknown."
+      year:
+        type: "INTEGER"
+        nullable: false
+        range: [2021, 2025]
+      osm_primary_road_m:
+        type: "FLOAT"
+        nullable: false
+        range: [0.0, null]
+      osm_road_density_km_km2:
+        type: "FLOAT"
+        nullable: false
+        range: [0.0, 100.0]
 
   # ----------------------------------------------------------------------------
   # MODEL 2: TRUC THOI GIAN 5 NAM BAT BIEN
@@ -409,11 +439,11 @@ models:
         type: "TINYINT"
         nullable: false
         allowedValues: [0, 1]
-        description: "1 neu khuyet thieu do may che phu (Missing Not At Random)."
+        description: "Ten cot ke thua; ban v1 = 1 neu AOD NULL, chua xac minh nguyen nhan may/MNAR."
       no2_tropospheric_mol_m2:
         type: "FLOAT"
         nullable: true
-        range: [0.0, 0.001]
+        range: [null, 0.001]
         unit: "mol/m²"
       viirs_nightlight_rad:
         type: "FLOAT"

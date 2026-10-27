@@ -1,0 +1,11 @@
+{
+  "grain": "one row for each real TV1 grid cell and local calendar day",
+  "rows": 6591860,
+  "aod_non_null": 916056,
+  "no2_non_null": 2184005,
+  "viirs_daily_non_null": 6184753,
+  "missing_aod_flag_semantics": "1 iff AOD is NULL; the MNAR/cloud cause is not established",
+  "no2_negative_policy": "preserved; no post-GEE clipping",
+  "viirs_policy": "monthly value repeated within the same calendar month only; NULL stays NULL",
+  "source_metadata": "image counts are collection counts for the region, not valid pixels per cell"
+}
