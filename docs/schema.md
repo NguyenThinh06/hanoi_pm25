@@ -47,7 +47,7 @@ flowchart TD
     subgraph S_REF ["TẦNG THAM CHIẾU & MANIFEST (Reference & Metadata)"]
         R1["data/reference/hanoi_boundary.geojson<br/>(SHA-256 Verified)"]
         R2["data/manifests/grid_manifest.json<br/>(Frozen N_GRID=3,610, N_DAYS=1,826)"]
-        R3["data/reference/station_registry.json<br/>(14 trạm + 1 unknown)"]
+        R3["data/reference/station_registry.json<br/>(43 trạm khảo sát + 1 unknown)"]
     end
 
     subgraph S_RAW ["TẦNG RAW / BRONZE (data/raw/)"]
@@ -66,8 +66,8 @@ flowchart TD
     subgraph S_CORE ["TẦNG CORE STAR SCHEMA / GOLD (data/core/)"]
         DIM_G["dim_grid_1km.parquet<br/>3.611 dòng (3.610 thật + 1 unknown)<br/>GeoParquet EPSG:3405<br/>Owner: TV1 (v1.0) / TV2 (v1.1)"]
         DIM_D["dim_date.parquet<br/>1.827 dòng (1.826 thật + 1 unknown)<br/>Mùa Hà Nội & Đốt rơm rạ<br/>Owner: TV1"]
-        DIM_S["dim_station.parquet<br/>15 dòng (14 thật + 1 unknown)<br/>Tier, Tọa độ, Grid mapping<br/>Owner: TV1"]
-        FCT_GT["fct_ground_truth_daily.parquet<br/>Grain: (station_id, date_id)<br/>Lọc nghiêm ngặt valid_hours >= 18h<br/>Owner: TV1"]
+        DIM_S["dim_station.parquet<br/>44 dòng (43 trạm khảo sát + 1 unknown)<br/>Tier, Tọa độ, Grid mapping<br/>Owner: TV1"]
+        FCT_GT["fct_ground_truth_daily.parquet<br/>Grain: (station_id, date_id)<br/>Giữ mọi ngày, gắn cờ 18 giờ<br/>Owner: TV1"]
         FCT_SAT["fct_grid_satellite_daily.parquet<br/>Grain đề xuất: (grid_id, date_id)<br/>AOD, NO2, VIIRS, cờ MNAR<br/>Owner: TV2 (Chờ chốt)"]
         FCT_MET["fct_grid_meteo_daily.parquet<br/>Grain đề xuất: (grid_id, date_id)<br/>T2m, RH, Mưa, Gió, Khí áp, BLH<br/>Owner: TV3 (Chờ chốt)"]
     end
@@ -90,7 +90,6 @@ flowchart TD
 
     RAW_SAT --> STG_SAT_D --> FCT_SAT
     RAW_MET --> STG_MET_D --> FCT_MET
-    STG_MET_D -.->|RH unblocks Köhler| STG_STN_D
 
     DIM_G --> MART_FEAT
     DIM_D --> MART_FEAT
@@ -114,10 +113,10 @@ flowchart TD
 | `dim_grid_1km` (v1.0) | Core Dim | GeoParquet 1.1.0 | 1 ô lưới 1km | `grid_id` | N/A | `data/core/dim_grid_1km.parquet` | TV1 | **Đã triển khai** |
 | `dim_grid_1km` (v1.1) | Core Dim | GeoParquet 1.1.0 | 1 ô lưới 1km | `grid_id` | N/A | `data/core/dim_grid_1km.parquet` | TV2 | **Đang thực hiện** |
 | `dim_date` | Core Dim | Parquet | 1 ngày lịch | `date_id` | N/A | `data/core/dim_date.parquet` | TV1 | **Đã triển khai** |
-| `dim_station` | Core Dim | Parquet | 1 trạm quan trắc | `station_id` | `grid_id` | `data/core/dim_station.parquet` | TV1 | **Đã triển khai** |
-| `stg_ground_truth_hourly` | Staging | Parquet | Trạm – Giờ UTC | `(station_id, datetime_utc)` | `grid_id` | `data/staging/stg_ground_truth_hourly.parquet` | TV1 | **Đã triển khai** |
+| `dim_station` | Core Dim | Parquet | 1 trạm quan trắc | `station_id` | `grid_id` | `data/core/dim_station.parquet` | TV1 | **Đã triển khai** (44 dòng: 43 trạm khảo sát + 1 unknown) |
+| `stg_ground_truth_hourly` | Staging | Parquet | Trạm – Sensor – Giờ UTC | `(station_id, sensor_id, datetime_utc)` | `grid_id` | `data/staging/stg_ground_truth_hourly.parquet` | TV1 | **Đã triển khai** |
 | `stg_ground_truth_daily` | Staging | Parquet | Trạm – Ngày | `(station_id, date_id)` | `station_id`, `date_id`, `grid_id` | `data/staging/stg_ground_truth_daily.parquet` | TV1 | **Đã triển khai** |
-| `fct_ground_truth_daily` | Core Fact | Parquet | Trạm – Ngày ($\ge 18\text{h}$) | `(station_id, date_id)` | `station_id`, `date_id`, `grid_id` | `data/core/fct_ground_truth_daily.parquet` | TV1 | **Đã triển khai** |
+| `fct_ground_truth_daily` | Core Fact | Parquet | Trạm – Ngày có bản ghi trong 2021–2025 | `(station_id, date_id)` | `station_id`, `date_id`, `grid_id` | `data/core/fct_ground_truth_daily.parquet` | TV1 | **Đã triển khai** (Giữ mọi ngày có quan sát, cờ 18h) |
 | `stg_satellite_daily` | Staging | Parquet | Pixel/Ô – Ngày | Chờ TV2 xác nhận | `date_id` | `data/staging/stg_satellite_daily.parquet` | TV2 | *Đề xuất / Chưa có* |
 | `fct_grid_satellite_daily`| Core Fact | Parquet | Ô – Ngày (Đề xuất) | `(grid_id, date_id)` | `grid_id`, `date_id` | `data/core/fct_grid_satellite_daily.parquet` | TV2 | *Đề xuất / Chờ TV2 chốt* |
 | `stg_meteo_daily` | Staging | Parquet | Pixel/Ô – Ngày | Chờ TV3 xác nhận | `date_id` | `data/staging/stg_meteo_daily.parquet` | TV3 | *Đề xuất / Chưa có* |
@@ -183,7 +182,11 @@ flowchart TD
 - **Hạt dữ liệu (Grain):** Từng trạm đo mặt đất vật lý.
 - **Khóa chính:** `station_id` (Không được Null, duy nhất 100%).
 - **Khóa ngoại:** `grid_id` $\rightarrow$ `dim_grid_1km(grid_id)`.
-- **Số dòng thực tế:** **15 dòng** (14 trạm quan trắc thực tế nằm trong địa giới Hà Nội + 1 trạm ngoại lệ `station_unknown`).
+- **Số dòng thực tế:** **44 dòng** theo ảnh chụp khảo sát hiện tại (43 trạm quan trắc mặt đất khảo sát trong bounding box Hà Nội từ OpenAQ tháng 10/2026 + 1 trạm ngoại lệ `station_unknown`).
+> [!NOTE]
+> - **Phạm vi địa lý & Phương thức thu thập:** Danh mục trạm được trích xuất bằng truy vấn Bounding Box mở rộng `[105.28, 20.56, 106.02, 21.39]` trên OpenAQ v3 API (`audit_stations.py`). Quy trình nạp hiện tại **chưa thực thi bộ lọc đa giác địa giới tự động** (`point-in-polygon` với `hanoi_boundary.geojson`). Trong tập dữ liệu khảo sát thực tế, toàn bộ 43 trạm đều có tọa độ nằm trong đa giác Hà Nội và rơi vào các ô phân tích thuộc `dim_grid_1km`.
+> - **Phân biệt hai khái niệm không gian:** Cần phân biệt giữa việc "tọa độ trạm nằm trong đa giác địa giới Hà Nội" với "trạm rơi vào ô lưới phân tích của `dim_grid_1km`". Do lưới 1km được tạo bằng toán tử `intersects` với ranh giới, các ô lưới biên có thể vươn ra ngoài mép đa giác địa giới.
+> - **Quy mô danh mục:** Số lượng 43 trạm mặt đất là ảnh chụp khảo sát (survey snapshot), không phải là hằng số bất biến như lưới không gian (3.610 ô) hay trục ngày (1.826 ngày), và không có kiểm tra số dòng cứng (`expectedRowCount`) trong bộ máy kiểm định hợp đồng. Nếu danh mục OpenAQ mở rộng trong tương lai, bảng này sẽ được cập nhật có kiểm soát.
 
 | Tên cột | Kiểu dữ liệu | Đơn vị | Nullable | Giai đoạn | Ý nghĩa nghiệp vụ |
 | :--- | :--- | :--- | :---: | :---: | :--- |
@@ -204,25 +207,25 @@ flowchart TD
 ### 4.4. Bảng Dữ Liệu Sự Kiện Quan Trắc Mặt Đất Hàng Ngày: `fct_ground_truth_daily`
 - **Đường dẫn:** `data/core/fct_ground_truth_daily.parquet`
 - **Định dạng:** Apache Parquet
-- **Hạt dữ liệu (Grain):** **Trạm – Ngày** (`station_id`, `date_id`). Mỗi dòng là một ngày đo hợp lệ tại một trạm cụ thể.
+- **Hạt dữ liệu (Grain):** **Trạm – Ngày** (`station_id`, `date_id`). Mỗi dòng đại diện cho một ngày quan trắc của một trạm cụ thể trong giai đoạn 2021–2025 (kể cả ngày có dưới 18 giờ sạch hoặc 0 giờ sạch). Đây là bảng sự kiện trạm–ngày, **chưa phải bảng nhãn ô–ngày** (việc tổng hợp nhiều trạm về ô hoặc tạo bảng nhãn ô–ngày phục vụ huấn luyện là bước xử lý dự kiến tiếp theo).
 - **Khóa chính:** `(station_id, date_id)` (Không được Null, duy nhất 100%).
 - **Khóa ngoại:**
   - `station_id` $\rightarrow$ `dim_station(station_id)`
   - `date_id` $\rightarrow$ `dim_date(date_id)`
-  - `grid_id` $\rightarrow$ `dim_grid_1km(grid_id)`
-- **Quy tắc nghiệm thu chất lượng:** Chỉ lưu các ngày đo có **$\text{valid\_hours\_count} \ge 18\text{ giờ}$** (đáp ứng tiêu chuẩn kiểm định môi trường quốc tế). Các ngày $< 18\text{h}$ được lưu ở `stg_ground_truth_daily` với `is_valid_day = 0` nhưng **bị loại hoàn toàn khỏi bảng Fact Core**.
+  - `grid_id` $\rightarrow$ `dim_grid_1km(grid_id)` (Dùng để nối trạm với ô lưới không gian 1km tương ứng; ánh xạ từ tọa độ trạm ghi nhận trong danh mục khảo sát, lưu ý lịch sử di chuyển trạm nếu có chưa được theo dõi theo thời gian).
+- **Quy tắc chất lượng:** Fact lưu mọi trạm–ngày có bản ghi giờ trong phạm vi 2021–2025; ngày ngoài phạm vi vẫn giữ ở staging. `is_valid_day = 1` khi có ít nhất 18 giờ sạch duy nhất; mỗi giờ đóng góp một lần vào trung bình ngày. `is_valid_day` là cờ chất lượng, **không phải bộ lọc fact**. Khi ngày không có giờ sạch nào (`valid_hours_count = 0`), `pm25_raw_mean`, `pm25_daily_min`, `pm25_daily_max` và `pm25_daily_std` nhận giá trị `NULL`. Cột `pm25_calibrated_mean` đã được loại bỏ hoàn toàn khỏi staging daily và fact do chưa có phương pháp hiệu chỉnh được nghiệm thu chính thức.
 
 | Tên cột | Kiểu dữ liệu | Đơn vị | Nullable | Giai đoạn | Ý nghĩa nghiệp vụ |
 | :--- | :--- | :--- | :---: | :---: | :--- |
 | `station_id` | `VARCHAR` | Mã trạm | **NO** | v1.0 (TV1) | Khóa ngoại xác định trạm quan trắc mặt đất. |
 | `date_id` | `INT32` | Số nguyên | **NO** | v1.0 (TV1) | Khóa ngoại xác định ngày đo theo định dạng `YYYYMMDD`. |
-| `grid_id` | `VARCHAR` | Mã ô lưới | **NO** | v1.0 (TV1) | Khóa ngoại ô lưới 1km chứa trạm (được denormalize để tăng tốc truy vấn phân tích). |
-| `valid_hours_count` | `INT64` | Giờ | **NO** | v1.0 (TV1) | Số lượng giờ đo hợp lệ trong ngày địa phương ($18 \le \text{valid\_hours\_count} \le 24$). |
-| `pm25_raw_mean` | `DOUBLE` | $\mu\text{g}/\text{m}^3$ | **NO** | v1.0 (TV1) | Nồng độ $PM_{2.5}$ trung bình ngày từ dữ liệu thô chưa hiệu chỉnh (chỉ tính trên các giờ có `qc_flag = 0`). |
-| `pm25_calibrated_mean`| `DOUBLE` | $\mu\text{g}/\text{m}^3$ | **NO** | v1.0 (TV1) | Nồng độ $PM_{2.5}$ trung bình ngày sau khi áp dụng hiệu chỉnh $\kappa$-Köhler (với Tier 1 FEM: bằng `pm25_raw_mean`). **Đây là biến nhãn chính cho bài toán ML.** |
-| `pm25_daily_std` | `DOUBLE` | $\mu\text{g}/\text{m}^3$ | YES | v1.0 (TV1) | Độ lệch chuẩn nồng độ $PM_{2.5}$ trong ngày (thể hiện biến động giờ). |
-| `pm25_daily_min` | `DOUBLE` | $\mu\text{g}/\text{m}^3$ | **NO** | v1.0 (TV1) | Nồng độ $PM_{2.5}$ thấp nhất ghi nhận trong ngày. |
-| `pm25_daily_max` | `DOUBLE` | $\mu\text{g}/\text{m}^3$ | **NO** | v1.0 (TV1) | Nồng độ $PM_{2.5}$ cao nhất ghi nhận trong ngày. |
+| `grid_id` | `VARCHAR` | Mã ô lưới | **NO** | v1.0 (TV1) | Khóa ngoại ô lưới 1km chứa trạm (được ánh xạ từ `dim_station` để bảo đảm tính toàn vẹn 100%). |
+| `valid_hours_count` | `INT64` | Giờ | **NO** | v1.0 (TV1) | Số giờ đo hợp lệ duy nhất trong ngày, từ 0 đến 24. |
+| `is_valid_day` | `INT32` | Cờ (0/1) | **NO** | v1.0 (TV1) | 1 nếu có ít nhất 18 giờ sạch; ngược lại 0. |
+| `pm25_raw_mean` | `DOUBLE` | $\mu\text{g}/\text{m}^3$ | **YES** | v1.0 (TV1) | Trung bình các giờ sạch; NULL khi không có giờ sạch (`valid_hours_count = 0`). |
+| `pm25_daily_std` | `DOUBLE` | $\mu\text{g}/\text{m}^3$ | **YES** | v1.0 (TV1) | Độ lệch chuẩn nồng độ $PM_{2.5}$ trong ngày giữa các giờ hợp lệ; NULL khi số giờ hợp lệ < 2. |
+| `pm25_daily_min` | `DOUBLE` | $\mu\text{g}/\text{m}^3$ | **YES** | v1.0 (TV1) | Nồng độ $PM_{2.5}$ thấp nhất trong các giờ hợp lệ của ngày; NULL khi không có giờ sạch. |
+| `pm25_daily_max` | `DOUBLE` | $\mu\text{g}/\text{m}^3$ | **YES** | v1.0 (TV1) | Nồng độ $PM_{2.5}$ cao nhất trong các giờ hợp lệ của ngày; NULL khi không có giờ sạch. |
 
 ---
 
@@ -320,7 +323,7 @@ Trong mô hình hóa không-thời gian, có sự khác biệt căn bản giữa
 Nếu một kỹ sư thiếu cẩn trọng thực hiện phép ghép:
 ```sql
 -- CẢNH BÁO: ĐÂY LÀ PHÉP GHÉP SAI GÂY NHÂN BÙNG NỔ SỐ DÒNG
-SELECT m.*, f.pm25_calibrated_mean
+SELECT m.*, f.pm25_raw_mean
 FROM mart_grid_daily_features m
 LEFT JOIN fct_ground_truth_daily f 
   ON m.grid_id = f.grid_id AND m.date_id = f.date_id;
@@ -337,7 +340,7 @@ SELECT
     f.station_id,
     f.date_id,
     f.grid_id,
-    f.pm25_calibrated_mean AS label_pm25,  -- Nhãn học giám sát
+    f.pm25_raw_mean AS label_pm25,  -- Nhãn thô thử nghiệm; cần lựa chọn ngày và sensor phù hợp
     f.valid_hours_count,
     m.temp_2m_mean_c,
     m.rh_mean_pct,
@@ -360,7 +363,7 @@ WITH station_daily_aggregated AS (
         grid_id,
         date_id,
         COUNT(DISTINCT station_id) AS active_stations_in_cell,
-        ROUND(AVG(pm25_calibrated_mean), 2) AS grid_cell_pm25_mean
+        ROUND(AVG(pm25_raw_mean), 2) AS grid_cell_pm25_mean
     FROM read_parquet('data/core/fct_ground_truth_daily.parquet')
     GROUP BY grid_id, date_id
 )
@@ -383,10 +386,10 @@ LEFT JOIN station_daily_aggregated s
 ### 6.1. Các Thành phần Đã Triển Khai Thực Tế (Implemented Baseline)
 1. **Khung xương Lưới 1km:** `dim_grid_1km.parquet` v1.0 (3.611 dòng, 6 cột, thuật toán `intersects` với ranh giới HDX COD-AB 2025, đóng băng SHA-256).
 2. **Trục Ngày 5 Năm:** `dim_date.parquet` (1.827 dòng, 9 cột, phân loại mùa Hà Nội và cửa sổ đốt rơm rạ, khóa `-1`).
-3. **Danh mục Trạm:** `dim_station.parquet` (15 dòng, phân loại Tier 1/Tier 2, ánh xạ tọa độ sang `grid_id`).
+3. **Danh mục Trạm:** `dim_station.parquet` (44 dòng gồm 43 trạm theo ảnh chụp khảo sát OpenAQ + 1 trạm ngoại lệ `station_unknown`, phân loại Tier 1/Tier 2, ánh xạ tọa độ sang `grid_id`).
 4. **Chuỗi Giờ Staging:** `stg_ground_truth_hourly.parquet` (Deduplicate qua `_row_hash`, gắn cờ QC phân tầng: âm, cực đại, flatline 6h, Hampel filter).
 5. **Gom Ngày Mặt Đất:** `stg_ground_truth_daily.parquet` (Tính trung bình và gắn cờ `is_valid_day = (valid_hours_count >= 18)`).
-6. **Fact Mặt Đất:** `fct_ground_truth_daily.parquet` (Chỉ lọc các dòng $\ge 18\text{h}$, tích hợp khóa ngoại chuẩn).
+6. **Fact Mặt Đất:** `fct_ground_truth_daily.parquet` (giữ mọi trạm–ngày có bản ghi trong phạm vi 2021–2025, gắn cờ chất lượng 18 giờ, không lọc bỏ ngày thiếu giờ).
 7. **Hạ tầng Ghi/Đọc:** `src/common/io_parquet.py` (ghi nguyên tử `atomic_write_parquet`) và `src/common/hashing.py` (băm SHA-256 `compute_row_hash`).
 
 ### 6.2. Các Thiết Kế Đề Xuất Mở Rộng Cần Bổ Sung (Proposed Architectural Enhancements)
@@ -411,4 +414,48 @@ Các cơ chế sau đã được thiết kế trong tài liệu kiến trúc nh�
 - Để tra cứu các ràng buộc kiểm định, tiêu chuẩn nghiệm thu từng trường dữ liệu, quy định xử lý bất thường và các quyết định kỹ thuật đang chờ TV2/TV3 chốt, vui lòng đọc:  
   👉 **[Hợp đồng Dữ liệu Tổng thể: docs/data_contract.md](./data_contract.md)**
 - Để tra cứu danh mục mã lệnh thực thi của dự án: Xem [run.py](../run.py).
-- Để tra cứu phân công công việc chi tiết của từng thành viên: Xem [Playbook TV1](../deliverables/HANOI_PM25_Playbook_TV1_ngthinh06.md), [Playbook TV2](../deliverables/HANOI_PM25_Playbook_TV2_hunganh.md) và [Playbook TV3](../deliverables/HANOI_PM25_Playbook_TV3_minh.md).
+- Để tra cứu phân công công việc chi tiết và cẩm nang hành động của từng thành viên: Xem [Cẩm nang Thực thi & Bàn giao (docs/guide.md)](./guide.md).
+
+---
+
+## 8. BẢN GHI QUYẾT ĐỊNH KIẾN TRÚC (ARCHITECTURAL DECISION RECORDS - ADR)
+
+### ADR-01: Phân tầng cờ QC chuỗi giờ và xử lý dữ liệu không hợp lệ
+- **Ngữ cảnh:** Chuỗi giờ PM2.5 từ OpenAQ có thể chứa giá trị âm, cực trị do lỗi phần cứng, giá trị kẹt số liên tục (flatline), dữ liệu thiếu (`NULL`, `NaN`), giá trị vô hạn (`Inf`, `-Inf`) hoặc mốc thời gian hỏng.
+- **Quyết định:**
+  1. Phân tầng cờ QC theo độ ưu tiên:
+     - `qc_flag = 1`: Giá trị âm (`pm25 < 0`), không hữu hạn (`NaN`, `Inf`, `-Inf`), Null hoặc timestamp không hợp lệ. Tuyệt đối không được tính là giờ sạch.
+     - `qc_flag = 2`: Vượt ngưỡng vật lý (`pm25 > 1000 ug/m3`).
+     - `qc_flag = 3`: Kẹt số liên tục thực tế $\ge 6$ giờ liên tiếp (khoảng cách giữa các mốc đo nằm trong khoảng 3480–3720s). Nếu có khoảng cách thời gian gãy đoạn (> 1h), chuỗi đếm flatline bị ngắt để tránh gán cờ nhầm.
+     - `qc_flag = 0`: Hợp lệ (Passed).
+  2. Bộ lọc Hampel (`is_hampel_outlier`): Được lưu thành trường độc lập mang tính chất chẩn đoán thống kê; không tự động loại giờ khỏi tổng hợp ngày trừ khi có quyết định phê duyệt chính thức.
+- **Trạng thái:** Đã triển khai và có Unit Test chứng minh.
+
+### ADR-02: PM2.5 trung bình theo các giờ hợp lệ trong ngày
+- **Ngày quyết định:** 2026-10-27. **Trạng thái:** Đã triển khai theo quyết định của TV1; tiêu chí chọn nhãn train tiếp tục được nhóm xác nhận.
+- **Ngữ cảnh:** Dự án xây dựng bản đồ PM2.5 lịch sử theo ngày Hà Nội. Một ngày trạm có thể thiếu giờ; cần giữ dữ liệu đó để kiểm toán và tránh nhầm giá trị của một phần ngày với trung bình đầy đủ 24 giờ.
+- **Quyết định:**
+  1. Thời điểm đo được lưu theo UTC; xác định ngày và giờ phân tích theo `Asia/Ho_Chi_Minh`.
+  2. Với mỗi `(station_id, date_id, hour_local)`, chỉ sử dụng phép đo có `qc_flag = 0` và PM2.5 hữu hạn; nếu có nhiều phép đo sạch cùng giờ, implementation hiện tại lấy trung bình chúng thành một giá trị giờ. Chưa có quy tắc ưu tiên sensor được phê duyệt.
+  3. `pm25_raw_mean` là trung bình cộng các giá trị giờ sạch trong ngày, mỗi giờ một trọng số, làm tròn 2 chữ số thập phân. Đây là giá trị thô sau QC, không phải giá trị đã hiệu chỉnh. `valid_hours_count` là số giờ sạch duy nhất dùng trong phép tính.
+  4. Ngày có 1–17 giờ sạch vẫn có trung bình các giờ quan sát và được giữ trong staging và fact. Không tự ngoại suy thành trung bình đủ 24 giờ. Ngày có bản ghi nhưng không có giờ sạch được giữ với `valid_hours_count = 0` và `pm25_raw_mean = NULL`. Ngày hoàn toàn không có bản ghi giờ không tự tạo dòng.
+  5. `is_valid_day = 1` khi có ít nhất 18 giờ sạch, ngược lại bằng `0`. Đây là cờ chất lượng, không phải điều kiện lọc fact. Lựa chọn các ngày để train sẽ được quyết định riêng.
+  6. Fact giữ các trạm-ngày có bản ghi trong phạm vi dự án 2021–2025; ngày ngoài phạm vi vẫn ở staging. Khóa fact là `(station_id, date_id)`, `grid_id` được ánh xạ từ danh mục trạm hiện tại.
+- **Hệ quả:** Trung bình dựa trên ít giờ có thể lệch so với trung bình 24 giờ, nhất là khi giờ thiếu không phân bố đều. Cần giữ số giờ và cờ chất lượng khi phân tích. Vị trí trạm theo lịch sử cần được xác minh nếu trạm di chuyển.
+- **Tham chiếu triển khai:** `src/features/build_ground_truth_daily.py`; kiểm thử trong `tests/unit/test_qc_and_aggregation.py`.
+
+### ADR-03: Ngữ nghĩa hiệu chuẩn PM2.5 (Calibration Semantics)
+- **Ngữ cảnh:** Trước đây, code gán cào bằng toàn bộ Tier 1 hoặc gán `openaq_2539` là trạm tham chiếu FEM. Tuy nhiên, `openaq_2539` đã ngừng hoạt động từ năm 2016, và trong giai đoạn 2021–2025 chưa có trạm nào có bằng chứng kiểm định thiết bị FEM và khoảng thời gian áp dụng mô hình hiệu chuẩn được nghiệm thu chính thức trong repo.
+- **Quyết định:**
+  1. Bỏ cột hiệu chỉnh khỏi staging daily và fact vì chưa có phương pháp hiệu chỉnh được xác minh.
+  2. Giữ `pm25_raw_mean` là trung bình thô sau QC; không coi là đã hiệu chỉnh.
+  3. Có thể bổ sung dữ liệu hiệu chỉnh sau khi xác minh phương pháp, phiên bản và phạm vi sensor; lựa chọn nhãn train chính thức cần nhóm phê duyệt.
+- **Trạng thái:** Đã triển khai trong code và cập nhật đồng bộ trong Data Contract.
+
+### ADR-04: Khóa tệp đồng thời và cơ chế nạp lại an toàn (Safe Re-run & Idempotency)
+- **Ngữ cảnh:** Quá trình tải dữ liệu OpenAQ có thể bị ngắt giữa chừng, hoặc cần chạy lại khi nguồn OpenAQ cập nhật dữ liệu lịch sử ($A \rightarrow B \rightarrow A$).
+- **Quyết định:**
+  1. Thứ tự nạp: Ingestion bắt buộc phải ghi dữ liệu thành công vào file Parquet đích trước khi cập nhật trạng thái `SUCCESS` vào manifest. Nếu ghi file thất bại, manifest lập tức ghi nhận `FAILED` và re-raise lỗi.
+  2. Cơ chế khóa file: `file_concurrency_lock` ghi nhận PID của tiến trình và kiểm tra trạng thái sống của tiến trình (`is_process_alive`). Tuyệt đối không tự ý bẻ khóa nếu tiến trình sở hữu vẫn đang hoạt động. Giới hạn: Đây là advisory lock đơn máy, quy trình ingestion thiết kế tối ưu cho chạy tuần tự (single-process / sequential).
+  3. Khử trùng revision: Nhận diện bộ khóa nghiệp vụ `(station_id, sensor_id, datetime_utc)` và so khớp với mã băm nội dung `_row_hash` của phiên bản mới nhất hiện tại. Hỗ trợ đầy đủ chuỗi revision $A \rightarrow B \rightarrow A$ mà không làm mất bản cập nhật và không gây trùng lặp khi chạy lại với cờ `--force`.
+- **Trạng thái:** Đã triển khai và có Unit Test chứng minh.

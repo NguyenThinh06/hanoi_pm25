@@ -4,15 +4,17 @@ info:
   title: "Hanoi PM2.5 Spatio-Temporal Data Lakehouse & 1km Surface Contract"
   version: "2.1.0"
   description: >
-    Hop dong du lieu chuan cong nghiep (Production Data Contract) quan tri toan bo
-    vong doi du lieu tu Bronze (Raw Ingestion), Silver (Staging QC), Gold (Core Star Schema)
-    den Platinum (Feature Mart & Prediction Surface).
+    Dac ta Hop dong Du lieu quan tri toan bo vong doi du lieu tu Bronze (Raw Ingestion),
+    Silver (Staging QC), Gold (Core Star Schema) den Platinum (Feature Mart & Prediction Surface).
     Bao dam bat bien ma tran khong-thoi gian 3.610 o x 1.826 ngay = 6.591.860 dong
     va nguyen tac chong ro ri du lieu (Anti-Data-Leakage) cho Machine Learning.
+    Luu y: Dac ta dang duoc thuc thi de kiem dinh tu dong cac thanh phan nen tang da hoan thanh cua TV1,
+    dong thoi thiet lap tieu chuan nghiem thu cho TV2 va TV3. Toan bo hop dong o trang thai DRAFT
+    cho phan bien va ky duyet chinh thuc giua cac thanh vien.
   domain: "environmental_and_urban_data_mesh"
-  status: "active"
-  classification: "internal_production"
-  updated_at: "2026-10-26T05:50:00Z"
+  status: "draft"
+  classification: "internal"
+  updated_at: "2026-10-27T10:45:00Z"
 
 # ==============================================================================
 # 1. QUAN TRI CON NGUOI & MA TRAN PHAN QUYEN (RACI GOVERNANCE)
@@ -38,7 +40,7 @@ stakeholders:
     responsibilities:
       - "Thu thap du lieu tai phan tich khi tuong ECMWF ERA5-Land (fct_grid_meteo_daily)."
       - "Tinh toan cac bien chuyen hoa: Do am tuong doi RH (Magnus-Tetens), Do ben vung huong gio, Lop bien hanh tinh PBLH."
-      - "Ban giao chuoi RH khi quyen dung han cho TV1 de mo khoa thuat toan hieu chinh am kappa-Kohler."
+      - "Ban giao chuoi RH khi quyen dung han de phuc vu dong goi Feature Mart va nghien cuu mo hinh hieu chuan."
 
 # ==============================================================================
 # 2. CAM KET KIEN TRUC & DICH VU (SLA & ARCHITECTURAL INVARIANTS)
@@ -212,11 +214,12 @@ models:
   # MODEL 3: DANH MUC TRAM QUAN TRAC MAT DAT
   # ----------------------------------------------------------------------------
   dim_station:
-    description: "Danh muc cac tram quan trac mat dat trong dia gioi Ha Noi (OpenAQ, PAM Air, AirNow)."
+    description: >
+      Danh muc cac tram quan trac mat dat khao sat trong bounding box Ha Noi tu OpenAQ API.
+      Snapshot khao sat hien tai co 43 tram thuc + 1 station_unknown (so dong khong phai hang so bat bien).
     path: "data/core/dim_station.parquet"
     format: "parquet"
     primaryKey: ["station_id"]
-    expectedRowCount: 44  # 43 real stations + 1 station_unknown
     columns:
       station_id:
         type: "VARCHAR"
@@ -271,7 +274,7 @@ models:
   # MODEL 4: BANG SU KIEN TRAM DO NGAY (TARGET VARIABLE)
   # ----------------------------------------------------------------------------
   fct_ground_truth_daily:
-    description: "Bang Fact tram ngay dat chuan Quality Gate (>= 18h hop le/ngay) lam nhan hoc may y."
+    description: "Bang Fact moi tram-ngay co quan sat trong 2021-2025; giu ca ngay duoi 18 gio va ngay khong co gio hop le."
     path: "data/core/fct_ground_truth_daily.parquet"
     format: "parquet"
     primaryKey: ["station_id", "date_id"]
@@ -299,20 +302,20 @@ models:
         type: "BIGINT"
         nullable: false
         stage: "v1.0"
-        range: [18, 24]
-        description: "So gio do sach trong ngay (Bat buoc >= 18h de chong lech mau)."
+        range: [0, 24]
+        description: "So gio do sach duy nhat trong ngay."
+      is_valid_day:
+        type: "INTEGER"
+        nullable: false
+        stage: "v1.0"
+        allowedValues: [0, 1]
+        description: "1 neu co it nhat 18 gio hop le; 0 neu it hon. Chi la co chat luong, khong loc fact."
       pm25_raw_mean:
         type: "DOUBLE"
-        nullable: false
+        nullable: true
         stage: "v1.0"
         range: [0.0, 1000.0]
-        description: "Nong do PM2.5 trung binh ngay tho (ug/m3)."
-      pm25_calibrated_mean:
-        type: "DOUBLE"
-        nullable: false
-        stage: "v1.0"
-        range: [0.0, 1000.0]
-        description: "Nong do PM2.5 trung binh ngay sau khi hieu chinh am kappa-Kohler (Bien muc tieu y)."
+        description: "Trung binh gio sach; NULL khi khong co gio hop le."
       pm25_daily_std:
         type: "DOUBLE"
         nullable: true
@@ -481,14 +484,14 @@ qualityAssertions:
     description: "Cap khoa (grid_id, date_id) phai la duy nhat 100% khong co trung lap."
 
   # Assertion 4: Quality Gate giờ đo trạm Fact
-  - id: "assert_ground_truth_strict_18h_rule"
+  - id: "assert_ground_truth_valid_day_flag"
     targetModel: "fct_ground_truth_daily"
     sql: >
       SELECT COUNT(*) AS invalid_days_count
       FROM read_parquet('data/core/fct_ground_truth_daily.parquet')
-      WHERE valid_hours_count < 18
+      WHERE is_valid_day IS NULL OR is_valid_day != CASE WHEN valid_hours_count >= 18 THEN 1 ELSE 0 END
     expectedResult: 0
-    description: "Khong duoc co bat ky ngay tram nao co so gio hop le < 18 gio trong bang Fact."
+    description: "Co 18 gio phai nhat quan voi so gio hop le; fact giu moi tram-ngay."
 
   # Assertion 5: Toàn vẹn khóa ngoại (Zero Orphan Stations)
   - id: "assert_zero_orphan_station_join"
@@ -515,7 +518,7 @@ qualityAssertions:
 # 5. RAO CHAN AN TOAN MACHINE LEARNING (ML EVALUATION GUARDRAILS)
 # ==============================================================================
 machineLearningGuardrails:
-  targetVariable: "pm25_calibrated_mean"
+  targetVariable: "pm25_raw_mean" # Nhan thu nghiem; can danh gia chat luong sensor truoc khi train.
   targetUnits: "ug/m3"
   evaluationScheme: "Grouped Spatial K-Fold Cross-Validation"
   cvSpatialParameters:
