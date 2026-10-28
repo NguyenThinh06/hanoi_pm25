@@ -3,6 +3,9 @@ __pycache__/
 *.py[cod]
 *$py.class
 *.so
+.pytest_cache/
+.ruff_cache/
+.test_tmp*/
 
 # Environments & Secrets
 .env
@@ -10,24 +13,17 @@ __pycache__/
 .venv/
 env/
 venv/
-ENV/
 
-# Dữ liệu Lakehouse (Chỉ lưu máy cục bộ, tuyệt đối không push lên Git)
+# Du lieu Lakehouse (luu cuc bo, khong day len Git)
 data/raw/
 data/staging/
+data/core/
 data/marts/
-data/predictions/
 *.parquet
-*.tmp
+*.tmp*
 
-# Ngoại lệ: Cho phép push ranh giới và manifest
+# Chi giu file ranh gioi tham chieu Ha Noi
 !data/reference/
-!data/manifests/
-
-# Model checkpoints & logs
-models/*.pkl
-models/*.txt
-*.log
 
 # IDE & OS
 .vscode/
