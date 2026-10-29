@@ -19,7 +19,8 @@ pm25_hanoi/
 │   ├── business_case.md    # Business Case & khung 6 giả thuyết nghiên cứu (H1 - H6)
 │   └── model_report.md     # Báo cáo kiểm định giả thuyết bằng XGBoost (H5 - H6) & ước tính 7,57M ô-ngày
 ├── notebooks/
-│   └── eda_hypotheses.ipynb # Notebook EDA & kiểm định thống kê cho từng giả thuyết (H1 - H4)
+│   ├── 01_raw_and_initial_eda.ipynb     # EDA ban đầu trên dữ liệu thô & ra quyết định thiết kế/chọn biến
+│   └── 02_hypothesis_testing_eda.ipynb  # EDA kiểm định thống kê cho từng giả thuyết (H1 - H4)
 ├── src/
 │   ├── common/
 │   │   ├── config.py       # Tham số thời gian, không gian, đường dẫn

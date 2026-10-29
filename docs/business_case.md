@@ -8,7 +8,7 @@
 Trên toàn bộ diện tích tự nhiên của thành phố Hà Nội ($\approx 3.359\text{ km}^2$), hệ thống lưới chuẩn của dự án chia thành **3.610 ô lưới $1\text{ km} \times 1\text{ km}$** (hệ quy chiếu phẳng `EPSG:3405`). Tuy nhiên, qua rà soát toàn bộ dữ liệu cảm biến mặt đất **OpenAQ v3** từ **01/01/2021 đến 30/09/2026** (2.099 ngày):
 - Toàn thành phố có **43 trạm quan trắc** nằm trong ranh giới hành chính Hà Nội (`is_boundary = TRUE`), nhưng do nhiều trạm đặt gần nhau ở khu vực nội đô, chúng chỉ phủ được **36 / 3.610 ô lưới** (**1,00% diện tích**).
 - **3.574 ô lưới còn lại (99,00% diện tích Hà Nội)** hoàn toàn **không có trạm quan trắc mặt đất**.
-- Ngay tại 36 ô có trạm, cảm biến cũng thường xuyên bị gián đoạn bảo trì hoặc đứt quãng truyền dẫn (tổng cộng chỉ có **9.203 dòng trạm-ngày** có dữ liệu và **7.287 dòng trạm-ngày đạt chuẩn $\ge 18\text{ giờ/ngày}$** trên tổng số $36 \times 2.099 = 75.564$ ô-ngày tiềm năng).
+- Ngay tại 36 ô có trạm, cảm biến cũng thường xuyên bị gián đoạn bảo trì hoặc đứt quãng truyền dẫn (tổng cộng chỉ có **9.207 dòng trạm-ngày** có dữ liệu và **7.290 dòng trạm-ngày đạt chuẩn $\ge 18\text{ giờ/ngày}$** trên tổng số $36 \times 2.099 = 75.564$ ô-ngày tiềm năng).
 
 ### 1.2. Hệ lụy đối với Sức khỏe Cộng đồng & Quản lý Môi trường
 Tại các trạm có quan trắc hợp lệ ở Hà Nội giai đoạn 2021–2026:
@@ -33,10 +33,10 @@ Xây dựng pipeline tích hợp đa nguồn và mô hình học máy **XGBoost*
 ## 3. Hệ thống Giả thuyết Nghiên cứu cần Kiểm định (Hypotheses Framework)
 
 Để đảm bảo tính chặt chẽ khoa học, dự án chia các giả thuyết thành **2 nhóm rõ rệt**:
-- **Nhóm A (H1 – H4):** Các giả thuyết về cơ chế vật lý, khí tượng và tín hiệu vệ tinh — được **kiểm định bằng EDA & Thống kê suy diễn** trong [`notebooks/eda_hypotheses.ipynb`](../notebooks/eda_hypotheses.ipynb).
+- **Nhóm A (H1 – H4):** Các giả thuyết về cơ chế vật lý, khí tượng và tín hiệu vệ tinh — được **kiểm định bằng EDA & Thống kê suy diễn** trong [`notebooks/02_hypothesis_testing_eda.ipynb`](../notebooks/02_hypothesis_testing_eda.ipynb) (sau khi đã thực hiện EDA dữ liệu thô và chốt quyết định thiết kế tại [`notebooks/01_raw_and_initial_eda.ipynb`](../notebooks/01_raw_and_initial_eda.ipynb)).
 - **Nhóm B (H5 – H6):** Các giả thuyết về khả năng học và suy rộng không gian của mô hình — được **kiểm định bằng thực nghiệm mô hình XGBoost** và báo cáo tại [`docs/model_report.md`](./model_report.md).
 
-### 3.1. Nhóm A — Giả thuyết Kiểm định bằng EDA & Thống kê (`notebooks/eda_hypotheses.ipynb`)
+### 3.1. Nhóm A — Giả thuyết Kiểm định bằng EDA & Thống kê (`notebooks/02_hypothesis_testing_eda.ipynb`)
 
 | Mã | Tên giả thuyết | Phát biểu giả thuyết ($H_1$) | Cơ chế vật lý / môi trường | Phép kiểm định thống kê |
 | :--- | :--- | :--- | :--- | :--- |
@@ -51,7 +51,7 @@ Xây dựng pipeline tích hợp đa nguồn và mô hình học máy **XGBoost*
 
 | Mã | Tên giả thuyết | Phát biểu giả thuyết ($H_1$) | Thiết kế thực nghiệm Mô hình | Tiêu chuẩn đánh giá & Kiểm định |
 | :--- | :--- | :--- | :--- | :--- |
-| **H5** | **Giá trị gia tăng của Vệ tinh trong Khả năng Học & Dự báo (5-Fold CV)** | Mô hình **Baseline 2 (`XGBoost: OpenAQ + Khí tượng + Vệ tinh`)** đạt sai số dự báo (RMSE, MAE, MAPE) thấp hơn và $R^2$ cao hơn có ý nghĩa thống kê so với **Baseline 1 (`XGBoost: OpenAQ + Khí tượng`)** trên cả tập huấn luyện và kiểm thử chéo 5-Fold CV. | Huấn luyện cùng cấu hình siêu tham số `XGBRegressor` trên `7.287` dòng chuẩn (`is_valid_day = 1`), so sánh `Baseline 1` (27 đặc trưng Lịch + Tọa độ + Khí tượng) với `Baseline 2` (34 đặc trưng = Baseline 1 + 7 biến Vệ tinh). | So sánh RMSE, MAE, $R^2$, MAPE toàn cục và theo 4 mùa; Kiểm định cặp **Wilcoxon Signed-Rank Test** trên hiệu sai số tuyệt đối $\Delta \|e\| = \|e_{\text{B1}}\| - \|e_{\text{B2}}\|$ ($\alpha = 0.01$). |
+| **H5** | **Giá trị gia tăng của Vệ tinh trong Khả năng Học & Dự báo (5-Fold CV)** | Mô hình **Baseline 2 (`XGBoost: OpenAQ + Khí tượng + Vệ tinh`)** đạt sai số dự báo (RMSE, MAE, MAPE) thấp hơn và $R^2$ cao hơn có ý nghĩa thống kê so với **Baseline 1 (`XGBoost: OpenAQ + Khí tượng`)** trên cả tập huấn luyện và kiểm thử chéo 5-Fold CV. | Huấn luyện cùng cấu hình siêu tham số `XGBRegressor` trên `7.290` dòng chuẩn (`is_valid_day = 1`), so sánh `Baseline 1` (27 đặc trưng Lịch + Tọa độ + Khí tượng) với `Baseline 2` (34 đặc trưng = Baseline 1 + 7 biến Vệ tinh). | So sánh RMSE, MAE, $R^2$, MAPE toàn cục và theo 4 mùa; Kiểm định cặp **Wilcoxon Signed-Rank Test** trên hiệu sai số tuyệt đối $\Delta \|e\| = \|e_{\text{B1}}\| - \|e_{\text{B2}}\|$ ($\alpha = 0.01$). |
 | **H6** | **Khả năng Suy rộng Không gian sang Ô Không có Trạm (Spatial GroupCV & 7,57 triệu ô-ngày)** | Khi dự báo cho các ô lưới hoàn toàn bị giấu trạm trong quá trình huấn luyện (**Spatial GroupKFold theo `grid_id`**), **Baseline 2** giảm đáng kể sai số so với **Baseline 1** và tái tạo hợp lý trường phân bố $\text{PM}_{2.5}$ trên tập **7.577.390 ô-ngày**. | Chia 5-Fold bằng `GroupKFold(n_splits=5)` theo `grid_id` (toàn bộ chuỗi thời gian của một ô trạm chỉ nằm ở Train hoặc Val), sau đó dùng mô hình huấn luyện toàn cục ước tính trên `mart_grid_daily_features.parquet` (7,57M dòng). | So sánh RMSE, MAE, $R^2$ trên `Spatial_GroupCV`; Kiểm định cặp **Wilcoxon Signed-Rank Test** trên sai số suy rộng không gian; Kiểm tra tính hợp lý vật lý trên 7.577.390 dòng dự báo. |
 
 ---
@@ -59,6 +59,7 @@ Xây dựng pipeline tích hợp đa nguồn và mô hình học máy **XGBoost*
 ## 4. Liên kết Tài liệu trong Dự án
 
 1. **Đặc tả Kiến trúc Lakehouse & Schema:** [`docs/schema.md`](./schema.md)
-2. **Notebook EDA & Kiểm định Giả thuyết H1 – H4:** [`notebooks/eda_hypotheses.ipynb`](../notebooks/eda_hypotheses.ipynb)
-3. **Báo cáo Kiểm định Mô hình (H5 – H6) & Ước tính 7,57M ô-ngày:** [`docs/model_report.md`](./model_report.md)
-4. **Mã nguồn Huấn luyện & Ước tính Lưới:** [`src/models/train_baselines.py`](../src/models/train_baselines.py)
+2. **Notebook 01 — EDA Ban đầu trên Dữ liệu Thô & Ra Quyết định:** [`notebooks/01_raw_and_initial_eda.ipynb`](../notebooks/01_raw_and_initial_eda.ipynb)
+3. **Notebook 02 — EDA & Kiểm định Giả thuyết H1 – H4:** [`notebooks/02_hypothesis_testing_eda.ipynb`](../notebooks/02_hypothesis_testing_eda.ipynb)
+4. **Báo cáo Kiểm định Mô hình (H5 – H6) & Ước tính 7,57M ô-ngày:** [`docs/model_report.md`](./model_report.md)
+5. **Mã nguồn Huấn luyện & Ước tính Lưới:** [`src/models/train_baselines.py`](../src/models/train_baselines.py)

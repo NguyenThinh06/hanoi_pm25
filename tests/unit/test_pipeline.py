@@ -283,8 +283,8 @@ def test_end_to_end_sql_pipeline(tmp_path: Path):
     copy_query(con, openaq_hourly_sql(f"'{raw_hours_path.as_posix()}'"), stg_hourly_path)
 
     stg_df = pd.read_parquet(stg_hourly_path)
-    assert int((stg_df.qc_flag == 1).sum()) == 2  # 1 giờ âm + 1 giờ vượt ngưỡng 1500
-    assert int((stg_df.qc_flag == 2).sum()) == 6  # 6 giờ PM10 kẹt số
+    assert set(stg_df.qc_flag.unique()) <= {0, 1}
+    assert int((stg_df.qc_flag == 1).sum()) == 2  # 1 giờ âm + 1 giờ vượt ngưỡng 1500 (bỏ qua kẹt số)
 
     # 4. Tạo staging meteo, satellite, viirs (chỉ cho ngày 2026-09-30, cố tình để ngày 2026-09-29 thiếu lưới)
     raw_meteo_path = tmp_path / "raw_meteo.parquet"

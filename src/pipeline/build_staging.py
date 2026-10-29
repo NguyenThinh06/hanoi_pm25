@@ -1,6 +1,6 @@
 """Staging: làm sạch từng nguồn raw, chuẩn hóa kiểu/đơn vị/thời gian, gắn cờ QC.
 
-  stg_openaq_hourly    sensor × giờ, có cờ qc_flag (0 = sạch, 1 = ngoài ngưỡng, 2 = kẹt số)
+  stg_openaq_hourly    sensor × giờ, có cờ qc_flag (0 = hợp lệ, 1 = không hợp lệ / ngoài ngưỡng)
   stg_meteo_daily      ô × ngày, đơn vị chuẩn (°C, hPa, mm, m/s)
   stg_satellite_daily  ô × ngày, S5P + AOD đã nhân hệ số 0,001
   stg_viirs_monthly    ô × tháng
@@ -13,7 +13,7 @@ from src.common import config
 from src.common.storage import copy_query, glob_sql
 from src.ingest.fetch_openaq import load_sensors
 
-# Ngưỡng hợp lệ vật lý theo tham số; ngoài ngưỡng -> qc_flag = 1
+# Ngưỡng hợp lệ vật lý theo tham số; trong ngưỡng -> qc_flag = 0 (hợp lệ), ngoài ngưỡng -> qc_flag = 1 (không hợp lệ)
 VALID_RANGE = {
     "pm25": (0.0, 1000.0),
     "pm10": (0.0, 2000.0),
@@ -25,7 +25,6 @@ VALID_RANGE = {
     "temperature": (-10.0, 50.0),
     "relativehumidity": (0.0, 100.0),
 }
-FLATLINE_HOURS = 6   # >= 6 giờ liên tiếp cùng giá trị -> cảm biến kẹt (áp dụng cho khí/bụi)
 
 
 def openaq_hourly_sql(raw_expr: str) -> str:
@@ -50,23 +49,6 @@ def openaq_hourly_sql(raw_expr: str) -> str:
             PARTITION BY h.sensor_id, h.datetime_from_utc
             ORDER BY h.datetime_to_utc DESC NULLS LAST
         ) = 1
-    ),
-    runs AS (
-        SELECT
-            *,
-            sum(is_new_run) OVER (PARTITION BY sensor_id ORDER BY datetime_utc) AS run_id
-        FROM (
-            SELECT
-                *,
-                CASE
-                    WHEN value = lag(value) OVER w
-                     AND datetime_utc - lag(datetime_utc) OVER w = INTERVAL 1 HOUR
-                    THEN 0
-                    ELSE 1
-                END AS is_new_run
-            FROM raw
-            WINDOW w AS (PARTITION BY sensor_id ORDER BY datetime_utc)
-        )
     )
     SELECT
         station_id,
@@ -82,12 +64,10 @@ def openaq_hourly_sql(raw_expr: str) -> str:
         CAST(
             CASE
                 WHEN value IS NULL OR isnan(value) OR NOT (CASE parameter {ranges} ELSE FALSE END) THEN 1
-                WHEN parameter IN ('pm25', 'pm10', 'no2', 'so2', 'co', 'co2', 'o3')
-                 AND count(*) OVER (PARTITION BY sensor_id, run_id) >= {FLATLINE_HOURS} THEN 2
                 ELSE 0
             END AS TINYINT
         ) AS qc_flag
-    FROM runs
+    FROM raw
     ORDER BY station_id, parameter, sensor_id, datetime_utc
     """
 

@@ -38,7 +38,7 @@ flowchart TD
   - `dim_date`: sinh chuỗi ngày `2021-01-01` → `2026-09-30` (`date_id = YYYYMMDD`).
   - `dim_station`: chiếu tọa độ trạm sang `EPSG:3405`, kiểm tra điểm tọa độ nằm trong đa giác địa giới Hà Nội (`is_boundary = boundary.covers(Point)`), chỉ gán `grid_id` khi `is_boundary = TRUE`.
 - **Staging (`build_staging.py`):**
-  - `stg_openaq_hourly`: `INNER JOIN` danh mục `sensors` theo `sensor_id`, khử trùng lặp theo `(sensor_id, datetime_from_utc)`, đổi sang giờ Hà Nội (`+07`) và gắn `qc_flag` (`0`: sạch, `1`: ngoài ngưỡng vật lý, `2`: kẹt số $\ge 6$ giờ liên tiếp).
+  - `stg_openaq_hourly`: `INNER JOIN` danh mục `sensors` theo `sensor_id`, khử trùng lặp theo `(sensor_id, datetime_from_utc)`, đổi sang giờ Hà Nội (`+07`) và gắn `qc_flag` nhị phân (`0`: hợp lệ trong ngưỡng vật lý, `1`: không hợp lệ / ngoài ngưỡng vật lý).
   - `stg_meteo_daily`, `stg_satellite_daily`, `stg_viirs_monthly`: khử trùng lặp theo khóa `(grid_id, date)` / `(grid_id, month)` và chuẩn hóa đơn vị (`°C`, `mm`, `hPa`, `aod047 * 0.001`).
 - **Core Facts (`build_facts.py`):**
   - `fct_station_daily`: lọc `qc_flag = 0`, gom `GROUP BY (station_id, parameter, date_id, hour_local)` để hợp nhất cấp giờ, rồi gom `GROUP BY (station_id, date_id)` tính `pm25_mean = sum(hourly_val) / pm25_valid_hours`, các cột `*_aq` và `openaq_*`; sau đó `LEFT JOIN dim_station USING (station_id)` để lấy `grid_id`.
@@ -63,7 +63,7 @@ flowchart TD
 | Core Fact | `core/fct_grid_meteo_daily.parquet` | `(grid_id, date_id)` | 7.577.390 |
 | Core Fact | `core/fct_grid_satellite_daily.parquet` | `(grid_id, date_id)` | 7.577.390 |
 | Mart | `marts/mart_grid_daily_features.parquet` | `(grid_id, date_id)` | 7.577.390 |
-| Mart | `marts/mart_station_daily_training.parquet` | `(station_id, date_id)` | 9.203 |
+| Mart | `marts/mart_station_daily_training.parquet` | `(station_id, date_id)` | 9.207 |
 
 ## 4. Schema các bảng Core & Mart
 
