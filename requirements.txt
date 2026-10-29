@@ -1,0 +1,16 @@
+duckdb>=1.1.0
+earthengine-api>=1.0.0
+geopandas>=1.0.0
+numpy>=2.0.0
+pandas>=2.2.0
+pyarrow>=17.0.0
+pyogrio>=0.9.0
+pyproj>=3.6.0
+pytest>=8.0.0
+python-dotenv>=1.0.0
+requests>=2.31.0
+ruff>=0.6.0
+scikit-learn>=1.5.0
+shapely>=2.0.0
+tzdata>=2024.1
+xgboost>=2.1.0
