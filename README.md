@@ -1,6 +1,15 @@
 # HANOI_PM25 — Spatial Data Lakehouse Pipeline (01/2021 – 09/2026)
 
-Pipeline thu thập, chuẩn hóa và tổng hợp dữ liệu không-thời gian phục vụ bài toán ước lượng và dự báo bụi mịn **PM2.5** theo ngày trên lưới **1 km × 1 km (EPSG:3405)** tại Hà Nội giai đoạn **01/01/2021 – 30/09/2026** (múi giờ `Asia/Ho_Chi_Minh`, UTC+7).
+Pipeline thu thập, chuẩn hóa và kết hợp dữ liệu không-thời gian để **ước tính hồi cứu nồng độ PM2.5 trung bình ngày** trên lưới **1 km × 1 km (EPSG:3405)** tại Hà Nội, trong giai đoạn cấu hình **01/01/2021 – 30/09/2026** (múi giờ `Asia/Ho_Chi_Minh`, UTC+7). Nhãn huấn luyện là số đo trạm OpenAQ; đặc trưng gồm lịch, tọa độ, khí tượng và vệ tinh. Kết quả là ước tính của mô hình, không phải số đo tại từng ô hay dự báo ngày tiếp theo.
+
+## Bài toán và trạng thái
+
+- Mục tiêu là mô tả phân bố PM2.5 lịch sử, kể cả tại những ô không có trạm, và cho phép đối chiếu với quan trắc. Lưới 1 km là độ phân giải đầu ra, không làm tăng độ phân giải gốc của dữ liệu đầu vào.
+- Hiện có pipeline Parquet + DuckDB, hai baseline XGBoost, đánh giá KFold và GroupKFold theo ô, cùng lệnh xuất ước tính. Cấu hình thời gian cố định; số dòng thực tế phụ thuộc dữ liệu đã tải. Xem [schema](docs/schema.md) và [báo cáo mô hình](docs/model_report.md).
+- Baseline 2 có kết quả Spatial GroupCV tốt hơn trong lần chạy được báo cáo dù dữ liệu vệ tinh thiếu; chưa mặc định là model cuối. Cần kiểm tra theo thời gian và theo mức thiếu trước khi lựa chọn.
+- Chưa triển khai lưu phiên bản model và inference độc lập, biến tĩnh DEM/lớp phủ đất, PostgreSQL, API, dashboard hoặc cập nhật tự động. Lộ trình chi tiết ở [docs/roadmap.md](docs/roadmap.md).
+
+Lệnh `train` hiện train cả hai baseline và xuất dự đoán hồi cứu bằng các mô hình train trên toàn bộ tập trạm hợp lệ. Các dự đoán đó không phải đánh giá ngoài mẫu; dùng kết quả OOF để đánh giá theo phép chia tương ứng.
 
 ---
 
@@ -17,6 +26,7 @@ pm25_hanoi/
 ├── docs/
 │   ├── schema.md           # Đặc tả chi tiết kiến trúc, bảng và cột dữ liệu
 │   ├── business_case.md    # Business Case & khung 6 giả thuyết nghiên cứu (H1 - H6)
+│   ├── roadmap.md          # Hướng phát triển end-to-end, các hạng mục dự kiến
 │   └── model_report.md     # Báo cáo kiểm định giả thuyết bằng XGBoost (H5 - H6) & ước tính 7,57M ô-ngày
 ├── notebooks/
 │   ├── 01_raw_and_initial_eda.ipynb     # EDA ban đầu trên dữ liệu thô & ra quyết định thiết kế/chọn biến
@@ -85,6 +95,9 @@ python run.py build
 
 # Bước 4: Huấn luyện XGBoost so sánh 2 Baseline & ước tính PM2.5 trên tập 7,57 triệu ô-ngày
 python run.py train
+
+# Chỉ đánh giá và huấn luyện, không xuất ước tính toàn lưới
+python run.py train --no-grid-estimate
 ```
 
 Tải thử nghiệm 1 tháng hoặc chỉ cập nhật metadata trạm:
@@ -102,4 +115,4 @@ python run.py lint
 python run.py test
 ```
 
-Xem chi tiết thiết kế bảng, khóa chính và quy tắc QC tại [`docs/schema.md`](./docs/schema.md).
+Lệnh `dims` tạo cả bảng trạm; cần chạy lại `build` sau khi tải metadata OpenAQ để cập nhật bảng này. Tải một tháng là phép thử ingestion, không đồng nghĩa `build` sẽ chạy được nếu thiếu các nguồn đầu vào khác. `train` sẽ bỏ qua ước tính lưới nếu file mart lưới không tồn tại. Xem chi tiết tại [`docs/schema.md`](./docs/schema.md).

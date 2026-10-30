@@ -2,7 +2,7 @@
 
 ## 1. Mục tiêu và quy ước
 
-- Bản đồ PM2.5 lịch sử `2021-01-01` → `2026-09-30` (2.099 ngày) có grain ô lưới–ngày (`3.610 ô × 2.099 ngày = 7.577.390` dòng); ngày phân tích theo giờ Hà Nội `Asia/Ho_Chi_Minh` (`UTC+7`), `date_id = YYYYMMDD`.
+- Bản đồ PM2.5 lịch sử có grain ô lưới–ngày; phạm vi cấu hình `2021-01-01` → `2026-09-30` gồm 2.099 ngày. Với 3.610 ô và đủ ngày có dữ liệu đầu vào, tối đa có `3.610 × 2.099 = 7.577.390` dòng. Mart lưới chỉ tạo các ngày có trong ít nhất một fact khí tượng hoặc vệ tinh, nên số dòng thực tế có thể ít hơn. Ngày theo giờ Hà Nội `Asia/Ho_Chi_Minh` (`UTC+7`), `date_id = YYYYMMDD`.
 - Dữ liệu nhãn cấp trạm–ngày: `pm25_mean` được tính bằng **trung bình cộng trên đúng số giờ hợp lệ (`pm25_valid_hours`) trong ngày**, giữ cả ngày có $< 18$ giờ sạch kèm cờ `is_valid_day = 1` khi $\ge 18$ giờ.
 - Quy ước đặt tên:
   - Khí/bụi khác đo tại trạm OpenAQ mang hậu tố **`_aq`**: `pm10_aq`, `no2_aq`, `so2_aq`, `co_aq`, `co2_aq`, `o3_aq`.
@@ -22,7 +22,7 @@ flowchart TD
     SV["stg_satellite_daily: S5P + AOD"] -->|"INNER JOIN grid_id, date_id"| V["fct_grid_satellite_daily: S5P, AOD, VIIRS"]
     VM["stg_viirs_monthly: ô–tháng"] -->|"LEFT JOIN grid_id, date_id//100 = month_id"| V
     G -->|"CROSS JOIN tạo khung ô–ngày"| X["mart_grid_daily_features: ô–ngày"]
-    T -->|"CROSS JOIN"| X
+    T -->|"CROSS JOIN, giữ ngày có fact khí tượng hoặc vệ tinh"| X
     M -->|"LEFT JOIN (grid_id, date_id)"| X
     V -->|"LEFT JOIN (grid_id, date_id)"| X
     F -->|"Lọc pm25_mean NOT NULL"| Y["mart_station_daily_training: trạm–ngày có nhãn"]
@@ -45,10 +45,12 @@ flowchart TD
   - `fct_grid_meteo_daily`: `stg_meteo_daily` `INNER JOIN dim_grid_1km USING (grid_id)` và `INNER JOIN dim_date USING (date_id)`, bổ sung các cờ `*_missing`.
   - `fct_grid_satellite_daily`: `stg_satellite_daily` `INNER JOIN` `dim_grid_1km` và `dim_date`, rồi `LEFT JOIN stg_viirs_monthly ON s.grid_id = v.grid_id AND (s.date_id // 100) = v.month_id`, bổ sung cờ `aod_047_missing`.
 - **Feature Marts (`build_marts.py`):**
-  - `mart_grid_daily_features`: tạo khung bằng `dim_grid_1km CROSS JOIN dim_date`, sau đó `LEFT JOIN fct_grid_meteo_daily USING (grid_id, date_id)` và `LEFT JOIN fct_grid_satellite_daily USING (grid_id, date_id)`. Không chứa bất kỳ cột `pm25_*` nào.
+  - `mart_grid_daily_features`: tạo khung bằng `dim_grid_1km CROSS JOIN dim_date`, chỉ giữ ngày xuất hiện trong ít nhất một fact khí tượng hoặc vệ tinh, sau đó `LEFT JOIN fct_grid_meteo_daily USING (grid_id, date_id)` và `LEFT JOIN fct_grid_satellite_daily USING (grid_id, date_id)`. Không chứa bất kỳ cột `pm25_*` nào.
   - `mart_station_daily_training`: lấy `fct_station_daily` (`pm25_mean IS NOT NULL AND grid_id IS NOT NULL`), `INNER JOIN dim_station ON station_id` (lọc `st.is_boundary = TRUE`), `INNER JOIN dim_date ON date_id` và `INNER JOIN dim_grid_1km ON grid_id` (giữ lịch và tọa độ không bao giờ bị `NULL`), rồi `LEFT JOIN mart_grid_daily_features ON (grid_id, date_id)`.
 
 ## 3. Danh mục file và khóa chính
+
+Số dòng dưới đây là số được ghi nhận trong một lần chạy, không phải cam kết cho mọi lần chạy hoặc tập dữ liệu hiện có.
 
 | Tầng | Tên file trong `data/` | Grain / khóa chính | Số dòng |
 | :--- | :--- | :--- | ---: |

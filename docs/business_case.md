@@ -4,18 +4,17 @@
 
 ## 1. Bối cảnh Nghiệp vụ & Bài toán (Problem Statement)
 
-### 1.1. Khoảng trống dữ liệu quan trắc mặt đất (99% diện tích "mù" dữ liệu)
+### 1.1. Khoảng trống dữ liệu quan trắc mặt đất
 Trên toàn bộ diện tích tự nhiên của thành phố Hà Nội ($\approx 3.359\text{ km}^2$), hệ thống lưới chuẩn của dự án chia thành **3.610 ô lưới $1\text{ km} \times 1\text{ km}$** (hệ quy chiếu phẳng `EPSG:3405`). Tuy nhiên, qua rà soát toàn bộ dữ liệu cảm biến mặt đất **OpenAQ v3** từ **01/01/2021 đến 30/09/2026** (2.099 ngày):
-- Toàn thành phố có **43 trạm quan trắc** nằm trong ranh giới hành chính Hà Nội (`is_boundary = TRUE`), nhưng do nhiều trạm đặt gần nhau ở khu vực nội đô, chúng chỉ phủ được **36 / 3.610 ô lưới** (**1,00% diện tích**).
-- **3.574 ô lưới còn lại (99,00% diện tích Hà Nội)** hoàn toàn **không có trạm quan trắc mặt đất**.
-- Ngay tại 36 ô có trạm, cảm biến cũng thường xuyên bị gián đoạn bảo trì hoặc đứt quãng truyền dẫn (tổng cộng chỉ có **9.207 dòng trạm-ngày** có dữ liệu và **7.290 dòng trạm-ngày đạt chuẩn $\ge 18\text{ giờ/ngày}$** trên tổng số $36 \times 2.099 = 75.564$ ô-ngày tiềm năng).
+- Trong lần chạy được báo cáo, tập huấn luyện có **7.290 dòng trạm-ngày hợp lệ** trên **36 / 3.610 ô lưới**; mart có 9.207 dòng trạm-ngày có nhãn. Đây là số lượng theo bộ dữ liệu và bộ lọc đã sử dụng, không khẳng định tổng số trạm thực tế trên địa bàn.
+- Tỷ lệ 36 / 3.610 là tỷ lệ **số ô** có nhãn hợp lệ trong tập này, không phải tỷ lệ diện tích hay dân số được quan trắc. Các ô còn lại không có nhãn trạm hợp lệ trong tập huấn luyện, không nhất thiết không có bất kỳ trạm hoặc quan trắc nào.
 
 ### 1.2. Hệ lụy đối với Sức khỏe Cộng đồng & Quản lý Môi trường
 Tại các trạm có quan trắc hợp lệ ở Hà Nội giai đoạn 2021–2026:
 - Nồng độ $\text{PM}_{2.5}$ trung bình đạt **$37,68\ \mu\text{g/m}^3$** (trung vị **$31,17\ \mu\text{g/m}^3$**, cực đại lên tới **$231,04\ \mu\text{g/m}^3$**).
 - Có tới **87,58% số ngày-trạm vượt khuyến nghị an toàn 24 giờ của WHO ($15\ \mu\text{g/m}^3$)** và **22,25% số ngày-trạm vượt Quy chuẩn Quốc gia QCVN 05:2023/BTNMT ($50\ \mu\text{g/m}^3$)**.
 
-Khi **99,00% số ô lưới 1 km không có trạm đo**, cơ quan quản lý môi trường và dịch tễ học không thể:
+Khi dữ liệu trạm trong tập nghiên cứu chỉ bao phủ một phần nhỏ số ô, việc sau đây gặp hạn chế:
 1. Đánh giá mức độ phơi nhiễm bụi mịn $\text{PM}_{2.5}$ dài hạn và ngắn hạn cho người dân ở các quận/huyện ngoại thành, khu công nghiệp và hành lang giao thông.
 2. Phân biệt đâu là ô nhiễm nền do điều kiện khí tượng bất lợi (nghịch nhiệt, lặng gió) và đâu là điểm nóng phát thải cục bộ (đô thị hóa, giao thông, đốt phụ phẩm nông nghiệp).
 
@@ -23,7 +22,7 @@ Khi **99,00% số ô lưới 1 km không có trạm đo**, cơ quan quản lý m
 
 ## 2. Mục tiêu Giải pháp Khoa học Dữ liệu (Objectives)
 
-Xây dựng pipeline tích hợp đa nguồn và mô hình học máy **XGBoost** để **ước tính ($\text{estimate}$) nồng độ $\text{PM}_{2.5}$ trung bình ngày cho toàn bộ 3.610 ô lưới $\times$ 2.099 ngày = 7.577.390 ô-ngày** dựa trên các biến giải thích luôn sẵn có trên toàn lưới:
+Xây dựng pipeline đa nguồn và mô hình **XGBoost** để **ước tính hồi cứu nồng độ PM2.5 trung bình ngày** cho các ô lưới có đặc trưng đầu vào. Tối đa theo cấu hình là 3.610 ô × 2.099 ngày = 7.577.390 ô-ngày; dữ liệu khí tượng và vệ tinh có thể bị thiếu. Đây chưa phải hệ thống dự báo ngày tiếp theo:
 1. **Lịch & Không gian (`dim_date`, `dim_grid_1km`):** `year`, `month`, `day_of_week`, `day_of_year`, `is_weekend`, `easting_m`, `northing_m`.
 2. **Khí tượng tái phân tích (`ERA5-Land` & `ERA5 BLH`):** Nhiệt độ (`temp_2m_c`), điểm sương (`dewpoint_2m_c`), độ ẩm (`rh_pct`), lượng mưa (`precip_mm`), vận tốc/hướng/độ bền gió (`wind_speed_10m_ms`, `wind_u_10m_ms`, `wind_v_10m_ms`, `wind_persistence`, `wind_dir_10m_deg`), áp suất bề mặt (`surface_pressure_hpa`), và độ cao lớp biên (`blh_mean_m`, `blh_min_m`).
 3. **Viễn thám Vệ tinh (`Sentinel-5P`, `MODIS MAIAC AOD`, `VIIRS DNB`):** Cột $\text{NO}_2$ tầng đối lưu (`no2_trop_mol_m2`), cột $\text{CO}$ (`co_mol_m2`), cột $\text{O}_3$ (`o3_mol_m2`), cột $\text{SO}_2$ (`so2_mol_m2`), độ dày quang học sol khí 1 km (`aod_047`), và bức xạ ánh sáng ban đêm 1 km (`viirs_radiance`).
@@ -31,6 +30,8 @@ Xây dựng pipeline tích hợp đa nguồn và mô hình học máy **XGBoost*
 ---
 
 ## 3. Hệ thống Giả thuyết Nghiên cứu cần Kiểm định (Hypotheses Framework)
+
+Các giả thuyết dưới đây nghiên cứu **mối liên hệ**, không tự chứng minh quan hệ nhân quả. Các mẫu trạm–ngày có thể phụ thuộc theo thời gian và không gian; kết quả kiểm định cần được diễn giải cùng giả định độc lập và phương pháp chia tập. KFold ngẫu nhiên không đánh giá khả năng dự đoán tương lai.
 
 Để đảm bảo tính chặt chẽ khoa học, dự án chia các giả thuyết thành **2 nhóm rõ rệt**:
 - **Nhóm A (H1 – H4):** Các giả thuyết về cơ chế vật lý, khí tượng và tín hiệu vệ tinh — được **kiểm định bằng EDA & Thống kê suy diễn** trong [`notebooks/02_hypothesis_testing_eda.ipynb`](../notebooks/02_hypothesis_testing_eda.ipynb) (sau khi đã thực hiện EDA dữ liệu thô và chốt quyết định thiết kế tại [`notebooks/01_raw_and_initial_eda.ipynb`](../notebooks/01_raw_and_initial_eda.ipynb)).
@@ -63,3 +64,4 @@ Xây dựng pipeline tích hợp đa nguồn và mô hình học máy **XGBoost*
 3. **Notebook 02 — EDA & Kiểm định Giả thuyết H1 – H4:** [`notebooks/02_hypothesis_testing_eda.ipynb`](../notebooks/02_hypothesis_testing_eda.ipynb)
 4. **Báo cáo Kiểm định Mô hình (H5 – H6) & Ước tính 7,57M ô-ngày:** [`docs/model_report.md`](./model_report.md)
 5. **Mã nguồn Huấn luyện & Ước tính Lưới:** [`src/models/train_baselines.py`](../src/models/train_baselines.py)
+6. **Các bước phát triển end-to-end:** [`docs/roadmap.md`](./roadmap.md)
