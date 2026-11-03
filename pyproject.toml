@@ -1,0 +1,18 @@
+[project]
+name = "pm25-hanoi"
+version = "2.0.0"
+description = "Data pipeline PM2.5 Ha Noi (OpenAQ, ERA5/ERA5-Land, Sentinel-5P, MODIS MAIAC, VIIRS)"
+requires-python = ">=3.11"
+
+[tool.ruff]
+line-length = 120
+target-version = "py312"
+extend-exclude = [".test_tmp*", ".venv", "data"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "W"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests/unit"]
+norecursedirs = [".test_tmp*", ".venv", "data", ".git"]
+pythonpath = ["."]
