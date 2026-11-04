@@ -12,6 +12,7 @@ Các lệnh chính:
   python run.py evaluate         -> chạy 3 phép đánh giá (Spatial GroupKFold, Random KFold, Temporal Split)
   python run.py train-final      -> huấn luyện & lưu 2 model cuối trên toàn bộ dữ liệu hợp lệ vào outputs/models/
   python run.py train            -> chạy trọn bộ evaluate + train-final (kèm --estimate-grid nếu ước tính lưới)
+  python run.py predict          -> sinh dự đoán hồi cứu PM2.5 trên toàn lưới từ hai model đã lưu
   python run.py lint             -> kiểm tra code bằng ruff
   python run.py test             -> chạy unit tests bằng pytest
 """
@@ -20,6 +21,11 @@ from __future__ import annotations
 import argparse
 import subprocess
 import sys
+
+if hasattr(sys.stdout, "reconfigure"):
+    sys.stdout.reconfigure(encoding="utf-8")
+if hasattr(sys.stderr, "reconfigure"):
+    sys.stderr.reconfigure(encoding="utf-8")
 
 
 def _exec(cmd: list[str]) -> None:
@@ -108,6 +114,22 @@ def main() -> None:
         action="store_true",
         help="Chạy thêm ước tính trên toàn bộ 7,57 triệu ô-ngày",
     )
+
+    p_pred = sub.add_parser(
+        "predict",
+        help="Sinh dự đoán hồi cứu PM2.5 trên toàn lưới từ hai model đã lưu",
+    )
+    p_pred.add_argument(
+        "--model",
+        choices=["baseline1", "baseline2", "both"],
+        default="both",
+        help="Chọn mô hình suy luận (baseline1, baseline2, both; mặc định: both)",
+    )
+    p_pred.add_argument("--start-date", type=str, default=None, help="Ngày bắt đầu (YYYY-MM-DD)")
+    p_pred.add_argument("--end-date", type=str, default=None, help="Ngày kết thúc (YYYY-MM-DD)")
+    p_pred.add_argument("--output-dir", type=str, default=None, help="Thư mục lưu prediction")
+    p_pred.add_argument("--no-resume", action="store_true", help="Ghi đè partition đã có")
+    p_pred.add_argument("--run-id", type=str, default=None, help="Mã lần chạy run_id")
 
     p_lint = sub.add_parser("lint", help="Kiểm tra chất lượng code với ruff")
     p_lint.add_argument("--fix", action="store_true", help="Tự động sửa lỗi lint")
@@ -219,6 +241,18 @@ def main() -> None:
             valid_days_only=not args.all_days,
             estimate_grid=args.estimate_grid,
             model_version=args.model_version,
+        )
+
+    elif args.cmd == "predict":
+        from src.models.inference import run_inference
+
+        run_inference(
+            model=args.model,
+            start_date=args.start_date,
+            end_date=args.end_date,
+            output_dir=args.output_dir,
+            resume=not args.no_resume,
+            run_id=args.run_id,
         )
 
     elif args.cmd == "lint":
