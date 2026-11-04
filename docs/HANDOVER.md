@@ -136,7 +136,7 @@ Gói bàn giao duy nhất đã được chuẩn bị sẵn tại thư mục `han
 | **Số bản ghi Baseline 1** | **7.577.390 dòng** |
 | **Số bản ghi Baseline 2** | **7.577.390 dòng** |
 | **Tổng số dòng prediction**| **15.154.780 dòng** |
-| **Link tải Google Drive** | **`[CHỦ DỰ ÁN ĐIỀN LINK GOOGLE DRIVE TẠI ĐÂY TRƯỚC KHI GỬI CHO NHÓM]`** |
+| **Link tải Google Drive** | **`https://drive.google.com/drive/folders/10grr4EY_Pg5YdYtkzR3M44na6NljR5FN?usp=drive_link`** |
 
 > [!NOTE]
 > Gói bàn giao đi kèm file băm `pm25-handover-2026-11-04.tar.gz.sha256` và manifest chi tiết `pm25-handover-2026-11-04.tar.gz.manifest.json`.
