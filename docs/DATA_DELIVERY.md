@@ -7,6 +7,7 @@ Phạm vi: pipeline dữ liệu, đánh giá, hai model cuối và metadata JSON
 ```powershell
 git clone --branch handover/end-to-end https://github.com/NguyenThinh06/hanoi_pm25.git
 cd hanoi_pm25
+$env:PYTHONUTF8 = "1"
 python -m venv .venv
 .\.venv\Scripts\python.exe -m pip install -r requirements.txt
 ```
@@ -23,6 +24,8 @@ Hai gói được tạo tại `handover_bundles/` trên máy bàn giao (không c
 Mỗi gói có file `.sha256` và `.manifest.json` đi kèm; manifest cũng nằm trong archive. Manifest ghi từng file, dung lượng, checksum, thời điểm và commit đóng gói. Không chứa `.env`, SQL, môi trường Python hoặc prediction toàn lưới cũ chưa xác minh.
 
 **Trạng thái chia sẻ:** gói được chuẩn bị cục bộ; chưa có URL tải được xác nhận. Người bàn giao tải hai gói và checksum lên thư mục dùng chung, cấp quyền tải cho thành viên rồi cập nhật URL vào mục này. Không coi clone Git là đã nhận data/model.
+
+Checksum và dung lượng của bản đã đóng gói được ghi trong `handover_artifacts.json` cùng thư mục tài liệu. Thông tin kiểm tra bản bàn giao nằm ở [HANDOVER_COMPLETION.md](HANDOVER_COMPLETION.md). Các artifact model giữ nguyên metadata ngày huấn luyện; `outputs/registry/registry_status.json` trong gói là trạng thái lịch sử của lần tạo artifact, không phải trạng thái triển khai hiện tại.
 
 ## 3. Kiểm tra và giải nén
 
