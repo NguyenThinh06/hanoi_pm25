@@ -26,6 +26,41 @@ def write_json(value, path: Path) -> None:
     os.replace(tmp, path)
 
 
+def _dump_simple_yaml(value, indent: int = 0) -> list[str]:
+    """Chuyển dict/list sang chuỗi YAML khi không có sẵn thư viện PyYAML."""
+    prefix = "  " * indent
+    lines: list[str] = []
+    if isinstance(value, dict):
+        for k, v in value.items():
+            if isinstance(v, (dict, list)) and v:
+                lines.append(f"{prefix}{k}:")
+                lines.extend(_dump_simple_yaml(v, indent + 1))
+            else:
+                lines.append(f"{prefix}{k}: {json.dumps(v, ensure_ascii=False)}")
+    elif isinstance(value, list):
+        for item in value:
+            if isinstance(item, (dict, list)) and item:
+                lines.append(f"{prefix}-")
+                lines.extend(_dump_simple_yaml(item, indent + 1))
+            else:
+                lines.append(f"{prefix}- {json.dumps(item, ensure_ascii=False)}")
+    else:
+        lines.append(f"{prefix}{json.dumps(value, ensure_ascii=False)}")
+    return lines
+
+
+def write_yaml(value, path: Path) -> None:
+    tmp = _tmp(path)
+    try:
+        import yaml
+
+        text = yaml.safe_dump(value, allow_unicode=True, sort_keys=False)
+    except ImportError:
+        text = "\n".join(_dump_simple_yaml(value)) + "\n"
+    tmp.write_text(text, encoding="utf-8")
+    os.replace(tmp, path)
+
+
 def copy_query(con: duckdb.DuckDBPyConnection, sql: str, path: Path) -> int:
     """Ghi kết quả một câu SQL DuckDB ra Parquet, trả về số dòng."""
     tmp = _tmp(path)

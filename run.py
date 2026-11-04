@@ -1,4 +1,4 @@
-"""CLI điều phối toàn bộ pipeline dữ liệu PM2.5 Hà Nội (01/01/2021 - 30/09/2026).
+"""CLI điều phối toàn bộ pipeline dữ liệu và mô hình PM2.5 Hà Nội (01/01/2021 - 30/09/2026).
 
 Các lệnh chính:
   python run.py dims             -> tạo dim_grid_1km, dim_date, dim_station
@@ -9,7 +9,9 @@ Các lệnh chính:
   python run.py facts            -> tổng hợp bảng core facts vào data/core/
   python run.py marts            -> ghép bảng mart lưới và mart huấn luyện vào data/marts/
   python run.py build            -> chạy trọn bộ dims -> staging -> facts -> marts
-  python run.py train            -> huấn luyện XGBoost so sánh 2 Baseline & ước tính 7,57 triệu ô-ngày
+  python run.py evaluate         -> chạy 3 phép đánh giá (Spatial GroupKFold, Random KFold, Temporal Split)
+  python run.py train-final      -> huấn luyện & lưu 2 model cuối trên toàn bộ dữ liệu hợp lệ vào outputs/models/
+  python run.py train            -> chạy trọn bộ evaluate + train-final (kèm --estimate-grid nếu ước tính lưới)
   python run.py lint             -> kiểm tra code bằng ruff
   python run.py test             -> chạy unit tests bằng pytest
 """
@@ -56,10 +58,56 @@ def main() -> None:
     sub.add_parser("marts", help="Xây dựng bảng feature marts cho mô hình")
     sub.add_parser("build", help="Chạy tuần tự: dims -> staging -> facts -> marts")
 
-    p_trn = sub.add_parser("train", help="So sánh 2 Baseline XGBoost và ước tính 7,57 triệu ô-ngày")
-    p_trn.add_argument("--folds", type=int, default=5, help="Số fold CV")
+    p_eval = sub.add_parser(
+        "evaluate",
+        help="Đánh giá Baseline 1 & 2 theo 3 phương pháp (Spatial GroupKFold, Random KFold, Temporal Split)",
+    )
+    p_eval.add_argument(
+        "--method",
+        choices=["all", "spatial_groupkfold", "random_kfold", "temporal_split"],
+        default="all",
+        help="Phương pháp đánh giá cần chạy (mặc định: all)",
+    )
+    p_eval.add_argument("--folds", type=int, default=5, help="Số fold CV (mặc định: 5)")
+    p_eval.add_argument("--seed", type=int, default=42, help="Random seed chuẩn (mặc định: 42)")
+    p_eval.add_argument("--all-days", action="store_true", help="Dùng cả ngày có < 18 giờ hợp lệ")
+
+    p_tf = sub.add_parser(
+        "train-final",
+        help="Huấn luyện và lưu Baseline 1 & 2 trên toàn bộ dữ liệu hợp lệ vào outputs/models/",
+    )
+    p_tf.add_argument("--seed", type=int, default=42, help="Random seed chuẩn (mặc định: 42)")
+    p_tf.add_argument(
+        "--model-version",
+        type=str,
+        default="v2.0.0-retrospective",
+        help="Phiên bản model cuối (mặc định: v2.0.0-retrospective)",
+    )
+    p_tf.add_argument("--all-days", action="store_true", help="Dùng cả ngày có < 18 giờ hợp lệ")
+    p_tf.add_argument(
+        "--estimate-grid",
+        action="store_true",
+        help="Chạy thêm ước tính trên toàn bộ 7,57 triệu ô-ngày sau khi lưu model cuối",
+    )
+
+    p_trn = sub.add_parser(
+        "train",
+        help="Chạy trọn bộ 3 đánh giá (evaluate) và huấn luyện 2 model cuối (train-final)",
+    )
+    p_trn.add_argument("--folds", type=int, default=5, help="Số fold CV (mặc định: 5)")
+    p_trn.add_argument("--seed", type=int, default=42, help="Random seed chuẩn (mặc định: 42)")
+    p_trn.add_argument(
+        "--model-version",
+        type=str,
+        default="v2.0.0-retrospective",
+        help="Phiên bản model cuối (mặc định: v2.0.0-retrospective)",
+    )
     p_trn.add_argument("--all-days", action="store_true", help="Dùng cả ngày có < 18 giờ hợp lệ")
-    p_trn.add_argument("--no-grid-estimate", action="store_true", help="Chỉ đánh giá CV, bỏ qua ước tính lưới")
+    p_trn.add_argument(
+        "--estimate-grid",
+        action="store_true",
+        help="Chạy thêm ước tính trên toàn bộ 7,57 triệu ô-ngày",
+    )
 
     p_lint = sub.add_parser("lint", help="Kiểm tra chất lượng code với ruff")
     p_lint.add_argument("--fix", action="store_true", help="Tự động sửa lỗi lint")
@@ -128,13 +176,49 @@ def main() -> None:
         build_facts()
         build_marts()
 
+    elif args.cmd == "evaluate":
+        from src.models.train_baselines import run_all_evaluations
+
+        methods = (
+            ("spatial_groupkfold", "random_kfold", "temporal_split")
+            if args.method == "all"
+            else (args.method,)
+        )
+        run_all_evaluations(
+            n_splits=args.folds,
+            seed=args.seed,
+            valid_days_only=not args.all_days,
+            methods=methods,
+        )
+
+    elif args.cmd == "train-final":
+        from src.common.config import MART_GRID_DAILY, OUTPUTS
+        from src.models.train_baselines import estimate_full_grid, train_final_models
+
+        trained = train_final_models(
+            seed=args.seed,
+            valid_days_only=not args.all_days,
+            model_version=args.model_version,
+        )
+        if args.estimate_grid and MART_GRID_DAILY.exists():
+            out_grid = OUTPUTS / "predictions" / "pred_grid_daily_pm25.parquet"
+            out_grid.parent.mkdir(parents=True, exist_ok=True)
+            estimate_full_grid(
+                trained["baseline1"]["model"],
+                trained["baseline2"]["model"],
+                MART_GRID_DAILY,
+                out_grid,
+            )
+
     elif args.cmd == "train":
         from src.models.train_baselines import train_and_evaluate
 
         train_and_evaluate(
             n_splits=args.folds,
+            seed=args.seed,
             valid_days_only=not args.all_days,
-            estimate_grid=not args.no_grid_estimate,
+            estimate_grid=args.estimate_grid,
+            model_version=args.model_version,
         )
 
     elif args.cmd == "lint":
