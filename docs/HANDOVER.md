@@ -524,6 +524,19 @@ Lưu 9.390 chuỗi quan trắc ngày tại trạm phục vụ đối chiếu tr�
 4. **Đối soát 3 điểm bắt buộc:** Chọn 3 cặp ô–ngày bất kỳ, so sánh giá trị số hiển thị:
    `File Parquet nguồn` ➔ `Database PostgreSQL` ➔ `FastAPI Response` ➔ `Giao diện React`. Sai lệch phải bằng 0.
 
+### Chạy PostgreSQL và importer Gói 1
+
+Tải và giải nén gói bàn giao vào thư mục gốc của dự án rồi bật Docker Desktop trước khi khởi động database. Tạo `.env`, sau đó đặt mật khẩu local trong `POSTGRES_PASSWORD` và giữ `DATABASE_URL` đồng bộ với mật khẩu đó.
+
+```cmd
+docker compose up -d db
+```
+Sau khi DB báo healthy thì chạy lệnh sau để import dữ liệu vào database:
+
+```cmd
+python scripts\import.py
+```
+
 #### Giai đoạn 2: Nạp toàn bộ dữ liệu & Vận hành chính thức
 1. Nạp đủ 138 partition Parquet của 2 model (15,15 triệu dòng prediction) vào PostgreSQL.
 2. Kiểm tra chỉ mục (Index) trên các cột `(grid_id, date, model_id)` và `(date, model_id)`. Truy vấn `/api/map` cho toàn bộ 3.610 ô trong 1 ngày phải phản hồi dưới **200ms**.
