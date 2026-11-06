@@ -537,6 +537,12 @@ Sau khi DB báo healthy thì chạy lệnh sau để import dữ liệu vào dat
 python scripts\import.py
 ```
 
+Mặc định importer tìm bundle ở thư mục gốc repo. Nếu đã giải nén bundle sang thư mục khác, truyền đường dẫn thư mục đó bằng `--bundle-dir`:
+
+```cmd
+python scripts\import.py --bundle-dir "D:\data\pm25-bundle"
+```
+
 #### Giai đoạn 2: Nạp toàn bộ dữ liệu & Vận hành chính thức
 1. Nạp đủ 138 partition Parquet của 2 model (15,15 triệu dòng prediction) vào PostgreSQL.
 2. Kiểm tra chỉ mục (Index) trên các cột `(grid_id, date, model_id)` và `(date, model_id)`. Truy vấn `/api/map` cho toàn bộ 3.610 ô trong 1 ngày phải phản hồi dưới **200ms**.

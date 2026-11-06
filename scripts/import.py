@@ -24,12 +24,13 @@ if hasattr(sys.stderr, "reconfigure"):
 
 ROOT = Path(__file__).resolve().parents[1]
 MIGRATIONS = ROOT / "db" / "migrations"
-MANIFEST_PATH = ROOT / "HANDOVER_MANIFEST.json"
-GRID_3405 = ROOT / "geometry" / "dim_grid_1km_epsg3405.parquet"
-GRID_4326 = ROOT / "geometry" / "dim_grid_1km_epsg4326.parquet"
-STATIONS = ROOT / "stations" / "dim_station.parquet"
-OBSERVATIONS = ROOT / "stations" / "fct_station_daily_observations.parquet"
-MODEL_DIR = ROOT / "metadata"
+BUNDLE_DIR = ROOT
+MANIFEST_PATH = BUNDLE_DIR / "HANDOVER_MANIFEST.json"
+GRID_3405 = BUNDLE_DIR / "geometry" / "dim_grid_1km_epsg3405.parquet"
+GRID_4326 = BUNDLE_DIR / "geometry" / "dim_grid_1km_epsg4326.parquet"
+STATIONS = BUNDLE_DIR / "stations" / "dim_station.parquet"
+OBSERVATIONS = BUNDLE_DIR / "stations" / "fct_station_daily_observations.parquet"
+MODEL_DIR = BUNDLE_DIR / "metadata"
 MODEL_ALIASES = {"baseline1", "baseline2"}
 PREDICTION_RELATIVE_PATH = re.compile(
     r"^predictions/(baseline1|baseline2)/([^/]+)/([0-9]{4}-[0-9]{2})\.parquet$"
@@ -38,6 +39,28 @@ PREDICTION_RELATIVE_PATH = re.compile(
 
 class ImportErrorWithContext(RuntimeError):
     """Raised when the handover input is incomplete or inconsistent."""
+
+
+def configure_bundle(bundle_dir: Path) -> None:
+    """Point all bundle inputs at an extracted bundle directory."""
+    global BUNDLE_DIR, MANIFEST_PATH, GRID_3405, GRID_4326, STATIONS, OBSERVATIONS, MODEL_DIR
+
+    BUNDLE_DIR = bundle_dir.expanduser().resolve()
+    if not BUNDLE_DIR.is_dir():
+        raise ImportErrorWithContext(f"Thư mục bundle không tồn tại: {BUNDLE_DIR}")
+    MANIFEST_PATH = BUNDLE_DIR / "HANDOVER_MANIFEST.json"
+    GRID_3405 = BUNDLE_DIR / "geometry" / "dim_grid_1km_epsg3405.parquet"
+    GRID_4326 = BUNDLE_DIR / "geometry" / "dim_grid_1km_epsg4326.parquet"
+    STATIONS = BUNDLE_DIR / "stations" / "dim_station.parquet"
+    OBSERVATIONS = BUNDLE_DIR / "stations" / "fct_station_daily_observations.parquet"
+    MODEL_DIR = BUNDLE_DIR / "metadata"
+
+
+def display_bundle_path(path: Path) -> str:
+    try:
+        return str(path.relative_to(BUNDLE_DIR))
+    except ValueError:
+        return str(path)
 
 
 def database_connection() -> psycopg.Connection:
@@ -69,7 +92,9 @@ def check_manifest_files(manifest: dict[str, Any]) -> None:
         relative = Path(record["path"])
         if relative.is_absolute() or ".." in relative.parts:
             raise ImportErrorWithContext(f"Đường dẫn không an toàn trong manifest: {relative}")
-        path = ROOT / relative
+        path = (BUNDLE_DIR / relative).resolve()
+        if not path.is_relative_to(BUNDLE_DIR):
+            raise ImportErrorWithContext(f"Đường dẫn bundle vượt ra ngoài thư mục bundle: {relative}")
         if not path.is_file():
             missing.append(relative.as_posix())
         elif path.stat().st_size != record["size_bytes"]:
@@ -112,12 +137,12 @@ def apply_migrations(conn: psycopg.Connection) -> None:
 # Kiểm tra file parquet có tồn tại không và có đủ cột yêu cầu không
 def require_columns(path: Path, required: set[str]) -> pq.ParquetFile:
     if not path.is_file():
-        raise ImportErrorWithContext(f"Không tìm thấy file đầu vào: {path.relative_to(ROOT)}")
+        raise ImportErrorWithContext(f"Không tìm thấy file đầu vào: {display_bundle_path(path)}")
     parquet = pq.ParquetFile(path)
     missing = required - set(parquet.schema_arrow.names)
     if missing:
         raise ImportErrorWithContext(
-            f"Schema {path.relative_to(ROOT)} thiếu cột: {', '.join(sorted(missing))}"
+            f"Schema {display_bundle_path(path)} thiếu cột: {', '.join(sorted(missing))}"
         )
     return parquet
 
@@ -155,15 +180,15 @@ def _grid_rows() -> Iterator[tuple[Any, ...]]:
     for parquet, expected_srid, path in ((parquet_3405, 3405, GRID_3405), (parquet_4326, 4326, GRID_4326),):
         schema_metadata = parquet.schema_arrow.metadata
         if schema_metadata is None:
-            raise ImportErrorWithContext(f"Thiếu metadata schema trong {path.relative_to(ROOT)}.")
+            raise ImportErrorWithContext(f"Thiếu metadata schema trong {display_bundle_path(path)}.")
         geo_metadata = schema_metadata.get(b"geo")
         if geo_metadata is None:
-            raise ImportErrorWithContext(f"Thiếu metadata GeoParquet trong {path.relative_to(ROOT)}.")
+            raise ImportErrorWithContext(f"Thiếu metadata GeoParquet trong {display_bundle_path(path)}.")
         geo = json.loads(geo_metadata)
         srid = geo["columns"]["geometry"]["crs"]["id"]["code"]
         if str(srid) != str(expected_srid):
             raise ImportErrorWithContext(
-                f"CRS của {path.relative_to(ROOT)} là {srid}, yêu cầu EPSG:{expected_srid}."
+                f"CRS của {display_bundle_path(path)} là {srid}, yêu cầu EPSG:{expected_srid}."
             )
     table_3405 = pq.read_table(GRID_3405, columns=sorted(required))
     table_4326 = pq.read_table(GRID_4326, columns=sorted(required))
@@ -246,7 +271,7 @@ def import_regular_parquet(
         cur.execute(f"CREATE TEMP TABLE stage_data (LIKE {target}) ON COMMIT DROP")
         copied = copy_parquet_to_stage(cur, source, columns)
         if copied != expected:
-            raise ImportErrorWithContext(f"Đọc thiếu dòng từ {source.relative_to(ROOT)}.")
+            raise ImportErrorWithContext(f"Đọc thiếu dòng từ {display_bundle_path(source)}.")
         cur.execute(
             f"INSERT INTO {target} ({', '.join(columns)}) "
             f"SELECT {', '.join(columns)} FROM stage_data "
@@ -303,7 +328,7 @@ def load_model_records() -> list[tuple[Any, ...]]:
         missing_fields = required_fields - metadata.keys()
         if missing_fields:
             raise ImportErrorWithContext(
-                f"Thiếu trường trong {path.relative_to(ROOT)}: {', '.join(sorted(missing_fields))}"
+                f"Thiếu trường trong {display_bundle_path(path)}: {', '.join(sorted(missing_fields))}"
             )
         feature_count = int(metadata["n_features"])
         records.append(
@@ -375,7 +400,7 @@ def prediction_files(manifest: dict[str, Any], month: str | None) -> list[tuple[
         alias, version, partition_month = match.groups()
         if month is not None and partition_month != month:
             continue
-        files.append((alias, ROOT / record["path"], version))
+        files.append((alias, BUNDLE_DIR / record["path"], version))
     if not files:
         raise ImportErrorWithContext(f"Manifest không có partition predictions cho tháng {month}.")
     if month is not None and {alias for alias, _, _ in files} != MODEL_ALIASES:
@@ -407,7 +432,7 @@ def import_prediction_partition(
         )
         copied = copy_parquet_to_stage(cur, source, columns)
         if copied != parquet.metadata.num_rows:
-            raise ImportErrorWithContext(f"Đọc thiếu dòng từ {source.relative_to(ROOT)}.")
+            raise ImportErrorWithContext(f"Đọc thiếu dòng từ {display_bundle_path(source)}.")
         cur.execute(
             """
             SELECT count(*) FILTER (WHERE model_id <> %s OR model_version <> %s),
@@ -420,12 +445,12 @@ def import_prediction_partition(
         wrong_model, negative_predictions, non_finite_predictions = cur.fetchone()
         if wrong_model:
             raise ImportErrorWithContext(
-                f"{source.relative_to(ROOT)} chứa model_id/version không khớp metadata hoặc tên partition."
+                f"{display_bundle_path(source)} chứa model_id/version không khớp metadata hoặc tên partition."
             )
         if negative_predictions:
-            raise ImportErrorWithContext(f"{source.relative_to(ROOT)} có prediction âm.")
+            raise ImportErrorWithContext(f"{display_bundle_path(source)} có prediction âm.")
         if non_finite_predictions:
-            raise ImportErrorWithContext(f"{source.relative_to(ROOT)} có prediction NaN/Infinity.")
+            raise ImportErrorWithContext(f"{display_bundle_path(source)} có prediction NaN/Infinity.")
         cur.execute(
             """
             INSERT INTO grid_daily_predictions (
@@ -439,7 +464,7 @@ def import_prediction_partition(
                 run_id = EXCLUDED.run_id
             """
         )
-    print(f"[predictions] {source.relative_to(ROOT)}: {copied:,} rows", flush=True)
+    print(f"[predictions] {display_bundle_path(source)}: {copied:,} rows", flush=True)
     return copied
 
 # kiểm tra sau khi nạp
@@ -520,6 +545,11 @@ def run_import(smoke_month: str | None, migrate_only: bool) -> None:
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
+        "--bundle-dir",
+        type=Path,
+        help="Thư mục gốc chứa HANDOVER_MANIFEST.json và các thư mục bundle (mặc định: thư mục gốc repo).",
+    )
+    parser.add_argument(
         "--smoke-month",
         metavar="YYYY-MM",
         help="Chỉ nạp prediction tháng này của cả hai model; các bảng dimension vẫn nạp đầy đủ.",
@@ -529,6 +559,7 @@ def main() -> None:
     if args.smoke_month and not re.fullmatch(r"\d{4}-(0[1-9]|1[0-2])", args.smoke_month):
         parser.error("--smoke-month phải theo định dạng YYYY-MM, ví dụ 2024-01")
     try:
+        configure_bundle(args.bundle_dir or ROOT)
         run_import(args.smoke_month, args.migrate_only)
     except (ImportErrorWithContext, OSError, psycopg.Error, ValueError, KeyError) as exc:
         print(f"[ERROR] {exc}", file=sys.stderr)
