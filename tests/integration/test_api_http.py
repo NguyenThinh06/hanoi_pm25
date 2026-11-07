@@ -3,6 +3,7 @@
 import json
 import socket
 from contextlib import contextmanager
+from datetime import date
 from unittest.mock import Mock
 from urllib.parse import quote
 
@@ -375,3 +376,164 @@ def test_real_tcp_connection_refusal_returns_503(requests_v1):
             for path, params in requests_v1:
                 response = client.get(path, params=params)
                 assert response.status_code == 503 and response.json()["error"]["code"] == "DATABASE_UNAVAILABLE"
+
+
+@pytest.mark.parametrize("origin", ["http://localhost:5173", "http://localhost:3000"])
+def test_default_cors_preflight_and_get(origin):
+    with TestClient(create_app(Settings())) as client:
+        response = client.options("/api/grids", headers={"Origin": origin, "Access-Control-Request-Method": "GET"})
+        assert response.status_code == 200
+        assert response.headers["access-control-allow-origin"] == origin
+        assert response.headers["access-control-allow-methods"] == "GET"
+        response = client.get("/health", headers={"Origin": origin})
+        assert response.status_code == 503
+        assert response.headers["access-control-allow-origin"] == origin
+
+
+@pytest.mark.parametrize("origin", ["https://untrusted.test", "http://127.0.0.1:5173"])
+def test_disallowed_cors_preflight_and_get(client, origin):
+    response = client.options("/api/grids", headers={"Origin": origin, "Access-Control-Request-Method": "GET"})
+    assert response.status_code == 400
+    assert "access-control-allow-origin" not in response.headers
+    response = client.get("/api/grids", headers={"Origin": origin})
+    assert response.status_code == 200  # CORS is a browser policy, not server authentication.
+    assert "access-control-allow-origin" not in response.headers
+
+
+def test_cors_environment_replaces_defaults(monkeypatch):
+    monkeypatch.setattr("src.api.config.load_dotenv", lambda *args, **kwargs: None)
+    monkeypatch.setenv("API_CORS_ORIGINS", "https://dashboard.test")
+    monkeypatch.delenv("DATABASE_URL", raising=False)
+    with TestClient(create_app()) as client:
+        for origin, status in [("https://dashboard.test", 200), ("http://localhost:5173", 400)]:
+            response = client.options("/api/grids", headers={"Origin": origin, "Access-Control-Request-Method": "GET"})
+            assert response.status_code == status
+
+
+@pytest.mark.parametrize("endpoint", [2, 3])
+def test_cache_hit_needs_no_database_connection(sql_client, requests_v1, endpoint):
+    client, connection, pool, released = sql_client
+    path, params = requests_v1[endpoint]
+    first = client.get(path, params=params)
+    assert first.status_code == 200
+    queries = connection.execute.call_count
+    # Simulate DB outage after a successful load: existing cache serves until TTL/clear.
+    connection.execute.side_effect = psycopg.OperationalError("offline")
+    second = client.get(path, params=params)
+    assert second.status_code == 200 and second.content == first.content
+    assert connection.execute.call_count == queries
+    pool.connection.assert_called_once()
+    released.assert_called_once()
+    client.app.state.response_cache.clear()
+    assert client.get(path, params=params).status_code == 503
+
+
+def test_dates_cache_separates_models_and_refreshes(client, repo, model_id):
+    other = "Baseline_1_OpenAQ_Meteo:v2.0.0-retrospective"
+    repo.dates.side_effect = lambda value: [date(2024, 1, 1 if value == model_id else 2)]
+    first = client.get("/api/dates", params={"model_id": model_id}).json()
+    second = client.get("/api/dates", params={"model_id": other}).json()
+    assert first["data"] == ["2024-01-01"] and second["data"] == ["2024-01-02"]
+    assert first["model_id"] == model_id and second["model_id"] == other
+    assert client.get("/api/dates", params={"model_id": model_id}).json() == first
+    assert repo.dates.call_count == repo.require_model.call_count == 2
+    repo.dates.side_effect = lambda _: [date(2024, 2, 1)]
+    client.app.state.response_cache.clear()
+    assert client.get("/api/dates", params={"model_id": model_id}).json()["data"] == ["2024-02-01"]
+    assert repo.dates.call_count == 3
+
+
+def test_grids_cache_is_immutable_and_refreshes(client, repo):
+    original = client.get("/api/grids").json()
+    repo.grids.return_value[0]["centroid_lon"] = 106
+    assert client.get("/api/grids").json() == original
+    repo.grids.assert_called_once()
+    client.app.state.response_cache.clear()
+    changed = client.get("/api/grids").json()
+    assert changed["features"][0]["properties"]["centroid_lon"] == 106
+    assert repo.grids.call_count == 2
+
+
+@pytest.mark.parametrize("endpoint", [2, 3])
+def test_ttl_expiry_loads_new_data(client, repo, requests_v1, endpoint):
+    clock = Mock(return_value=0)
+    client.app.state.response_cache.clock = clock
+    path, params = requests_v1[endpoint]
+    assert client.get(path, params=params).status_code == 200
+    method = repo.dates if endpoint == 2 else repo.grids
+    method.return_value = []
+    clock.return_value = 300
+    body = client.get(path, params=params).json()
+    assert body["data" if endpoint == 2 else "features"] == []
+    assert method.call_count == 2
+
+
+@pytest.mark.parametrize("endpoint", [2, 3])
+@pytest.mark.parametrize("during_exit", [False, True])
+@pytest.mark.parametrize("failure,status", [(psycopg.OperationalError, 503), (psycopg.DataError, 500)])
+def test_failed_cache_load_retries_sql(sql_client, requests_v1, endpoint, during_exit, failure, status):
+    client, connection, pool, _ = sql_client
+    checkout = pool.connection.side_effect
+
+    @contextmanager
+    def failing_checkout():
+        yield connection
+        raise failure("private details")
+
+    if during_exit:
+        pool.connection.side_effect = failing_checkout
+    else:
+        connection.execute.side_effect = failure("private details")
+    path, params = requests_v1[endpoint]
+    assert client.get(path, params=params).status_code == status
+    pool.connection.side_effect = checkout
+    connection.execute.side_effect = None
+    assert client.get(path, params=params).status_code == 200
+    assert client.get(path, params=params).status_code == 200
+    assert pool.connection.call_count == 2  # Error was not cached; third request is a cache hit.
+
+
+def test_missing_and_invalid_models_are_not_cached(client, repo, model_id):
+    for _ in range(2):
+        assert client.get("/api/dates", params={"model_id": "missing"}).status_code == 404
+        assert client.get("/api/dates", params={"model_id": "bad\x00id"}).status_code == 422
+    assert repo.require_model.call_count == 2
+    repo.require_model.side_effect = None
+    assert client.get("/api/dates", params={"model_id": "missing"}).status_code == 200
+    assert repo.require_model.call_count == 3
+
+
+def test_invalid_geojson_is_never_cached(repo):
+    from src.api.routes import get_repository
+
+    original = repo.grids.return_value[0]["centroid_lon"]
+    repo.grids.return_value[0]["centroid_lon"] = float("nan")
+    app = create_app(Settings())
+    app.dependency_overrides[get_repository] = lambda: repo
+    with TestClient(app, raise_server_exceptions=False) as client:
+        assert client.get("/api/grids").status_code == 500
+        repo.grids.return_value[0]["centroid_lon"] = original
+        assert client.get("/api/grids").status_code == 200
+        assert client.get("/api/grids").status_code == 200
+    assert repo.grids.call_count == 2
+
+
+@pytest.mark.parametrize("endpoint", [0, 1, 4, 5, 6])
+def test_other_endpoints_never_use_cache(sql_client, requests_v1, endpoint):
+    client, _, pool, released = sql_client
+    path, params = requests_v1[endpoint]
+    for _ in range(2):
+        assert client.get(path, params=params).status_code == 200
+    assert pool.connection.call_count == released.call_count == 2
+
+
+def test_cache_does_not_cross_apps_or_lifespans(repo):
+    from src.api.routes import get_repository
+
+    first, second = create_app(Settings()), create_app(Settings())
+    for app in (first, second, first):
+        app.dependency_overrides[get_repository] = lambda: repo
+        with TestClient(app) as client:
+            assert client.get("/api/grids").status_code == 200
+            assert client.get("/api/grids").status_code == 200
+    assert repo.grids.call_count == 3

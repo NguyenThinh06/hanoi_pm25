@@ -6,6 +6,7 @@ from typing import Annotated
 
 from fastapi import APIRouter, Depends, Path, Query, Request
 
+from .cache import CacheSession
 from .errors import APIError
 from .repository import Repository
 from .schemas import (
@@ -28,7 +29,18 @@ validation = {422: {"model": ErrorResponse}}
 not_found = {404: {"model": ErrorResponse}, **validation}
 
 
-def get_repository(request: Request) -> Iterator[Repository]:
+def get_cache(request: Request) -> Iterator[CacheSession]:
+    session = request.app.state.response_cache.begin()
+    yield session
+    # Skipped on validation/query/response/transaction-exit errors.
+    session.publish()
+
+
+Cache = Annotated[CacheSession, Depends(get_cache, scope="function")]
+
+
+def get_repository(request: Request, cache: Cache) -> Iterator[Repository]:
+    # Depending on Cache makes the DB context exit BEFORE cache publication.
     with ExitStack() as stack:
         yield Repository(lambda: stack.enter_context(request.app.state.database.connection()))
 
@@ -55,20 +67,31 @@ def models(repo: Repo):
 
 
 @router.get("/api/dates", response_model=DatesResponse, responses=not_found)
-def dates(repo: Repo, model_id: ModelID):
+def dates(repo: Repo, model_id: ModelID, cache: Cache):
+    key = ("dates", model_id)
+    cached = cache.get(key)
+    if cached is not None:
+        return cached
     repo.require_model(model_id)
     data = repo.dates(model_id)
-    return {
-        "model_id": model_id,
-        "count": len(data),
-        "data": data,
-        "min_date": data[0] if data else None,
-        "max_date": data[-1] if data else None,
-    }
+    return cache.stage(
+        key,
+        DatesResponse(
+            model_id=model_id,
+            count=len(data),
+            data=data,
+            min_date=data[0] if data else None,
+            max_date=data[-1] if data else None,
+        ),
+    )
 
 
 @router.get("/api/grids", response_model=GridsResponse)
-def grids(repo: Repo):
+def grids(repo: Repo, cache: Cache):
+    key = ("grids", "")
+    cached = cache.get(key)
+    if cached is not None:
+        return cached
     features = []
     for row in repo.grids():
         features.append(
@@ -79,7 +102,7 @@ def grids(repo: Repo):
                 "properties": {key: row[key] for key in ("grid_id", "centroid_lon", "centroid_lat", "is_boundary")},
             }
         )
-    return {"type": "FeatureCollection", "features": features}
+    return cache.stage(key, GridsResponse(features=features))
 
 
 @router.get("/api/map", response_model=MapResponse, responses=not_found)

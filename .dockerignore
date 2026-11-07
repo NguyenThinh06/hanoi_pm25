@@ -1,0 +1,10 @@
+# Backend-only allowlist: excludes .git, .venv, .env*, tests, data and artifacts.
+**
+!Dockerfile
+!requirements-api.txt
+!src/
+src/*
+!src/__init__.py
+!src/api/
+src/api/*
+!src/api/*.py

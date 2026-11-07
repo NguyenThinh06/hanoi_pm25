@@ -5,6 +5,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
+from .cache import ResponseCache
 from .config import Settings
 from .database import Database
 from .errors import install_error_handlers
@@ -16,6 +17,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
 
     @asynccontextmanager
     async def lifespan(app: FastAPI):
+        app.state.response_cache.clear()
         database = Database(settings)
         app.state.database = database
         try:
@@ -23,6 +25,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             yield
         finally:
             database.close()
+            app.state.response_cache.clear()
 
     app = FastAPI(
         title="Hanoi PM2.5 API",
@@ -30,6 +33,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         lifespan=lifespan,
         description="Ước tính hồi cứu và quan trắc PM2.5 (µg/m³). API Contract v1 trong docs/HANDOVER.md.",
     )
+    app.state.response_cache = ResponseCache(ttl=settings.cache_ttl_seconds)
     install_error_handlers(app)
     if settings.cors_origins:
         app.add_middleware(

@@ -1,16 +1,52 @@
 # Báo cáo kiểm chứng Gói 2 — 07/11/2026
 
-Nhánh: `feature/package-2-api`. HEAD: `00147be` (`Merge db+postgres`).
-Trước đợt sửa sau review có 19 file staged và không có thay đổi unstaged.
-Bản sửa chỉ cập nhật working tree; staging vẫn giữ nguyên và cần người dùng stage lại
-các file đã sửa trước khi commit. Không chuyển nhánh, commit, push, merge hay sửa index Git.
+Nhánh: `feature/package-2-api`. HEAD đầu đợt: `05060ce`
+(`feat(api): implement package 2 contract v1 with validated error handling`).
+Working tree sạch và không có file staged khi bắt đầu bổ sung CORS/cache/Dockerfile.
+Bản bổ sung chỉ cập nhật working tree; người dùng cần tự review, stage và commit.
+Không chuyển nhánh, commit, push, merge hay sửa index Git.
 Không thay đổi migration, importer, dữ liệu, Frontend, Compose hoặc API Contract v1.
 
-Kết quả cuối: **225 passed, 0 failed, 9 skipped, 1 warning**. Lint, format và
-dependency check đạt. Không còn lỗi kỹ thuật đã biết thuộc Gói 2 có thể xử lý độc lập
-trong phạm vi đợt review này. Chưa nghiệm thu PostgreSQL/PostGIS thật.
+Kết quả cuối toàn dự án: **266 passed, 0 failed, 9 skipped, 1 warning**;
+riêng Backend: **253 passed, 1 warning**. Lint, format và dependency check đạt.
+Chưa nghiệm thu PostgreSQL/PostGIS thật hay Docker build.
 
-## Các lỗi đã sửa sau review
+## Bổ sung CORS, RAM cache và Dockerfile
+
+- CORS mặc định đúng hai origin React localhost:5173/3000, environment thay thế mặc
+  định (kể cả chuỗi rỗng). Preflight GET, origin được phép và bị từ chối có tests.
+- RAM cache riêng mỗi app/worker: dates theo model_id, grids là toàn FeatureCollection.
+  JSON đã validate được lưu dạng bytes; giới hạn 129 entry/32 MiB payload và khóa,
+  TTL 300 giây (`API_CACHE_TTL_SECONDS=0` để tắt). Không giữ connection/repository,
+  không cache lỗi; chỉ publish sau khi transaction kết thúc thành công.
+- Clear/restart và TTL làm mới dữ liệu, payload không bị sửa chéo, LRU có Lock,
+  request đang tải trước clear không ghi ngược dữ liệu cũ. Không cache 5 endpoint khác.
+  Cache hit không lấy connection; DB outage có thể vẫn trả snapshot còn TTL của hai
+  endpoint, `/health` vẫn kiểm tra DB. Xem hướng dẫn sau import trong BACKEND.md.
+- Dockerfile Python 3.12 slim, runtime requirements riêng, COPY API rõ ràng, non-root,
+  Uvicorn 0.0.0.0:8000 không reload. Dockerignore dùng allowlist tránh secret/artifacts.
+  Không sửa Compose; chỉ đưa ví dụ cho Gói 4 với hostname DB `db`.
+
+12 file tạo/sửa trong đợt này:
+
+| File | Trạng thái và mục đích |
+|---|---|
+| `.env.example` | Sửa: CORS mặc định và TTL cache, không thêm secret |
+| `.dockerignore` | Mới: giới hạn build context cho Backend |
+| `Dockerfile` | Mới: container FastAPI |
+| `src/api/cache.py` | Mới: cache TTL/LRU có giới hạn và publication theo request |
+| `src/api/config.py` | Sửa: CORS mặc định, ưu tiên env, kiểm tra TTL |
+| `src/api/main.py` | Sửa: cache riêng mỗi app, clear theo lifespan |
+| `src/api/routes.py` | Sửa: dùng cache cho dates/grids sau validation và DB teardown |
+| `tests/unit/test_api.py` | Sửa: gọi route với cache dependency |
+| `tests/unit/test_api_cache.py` | Mới: unit cache và cấu hình |
+| `tests/integration/test_api_http.py` | Sửa: HTTP CORS/cache/regression |
+| `docs/BACKEND.md` | Sửa: Frontend, cache invalidation, Docker/Compose mẫu |
+| `docs/BACKEND_VALIDATION.md` | Sửa: bằng chứng kiểm thử và giới hạn hiện tại |
+
+Không thay đổi requirements, schema/SQL, migration, importer hoặc Frontend.
+
+## Các lỗi đã sửa ở đợt review trước (đã có trong HEAD)
 
 1. **Dependency pool:** extra `psycopg[pool]` không ràng buộc phiên bản riêng của pool.
    Thêm `psycopg-pool>=3.2.3,<4` để bảo đảm có `check_connection` và tham số `check`.
@@ -26,7 +62,7 @@ trong phạm vi đợt review này. Chưa nghiệm thu PostgreSQL/PostGIS thật
    `Depends(..., scope="function")` để trả kết nối trước response; thêm ràng buộc
    FastAPI >= 0.121 cho tính năng này và regression tests trên cả 7 endpoint.
 
-10 file thay đổi trong đợt sửa sau review:
+10 file đã thay đổi trong đợt sửa sau review trước:
 
 | File | Thay đổi |
 |---|---|
@@ -89,17 +125,16 @@ Windows, Python **3.13.13** trong `.venv` local (được Git ignore).
 FastAPI 0.162.0, Pydantic 2.14.3, psycopg 3.3.8, psycopg_pool 3.3.3,
 Uvicorn 0.54.0, pytest 9.2.0, httpx 0.28.1.
 Đã cài dependencies API và requirements toàn dự án từ lần triển khai trước.
-Đợt sửa hiện tại xác nhận các phiên bản đó thỏa toàn bộ ràng buộc mới, không đổi
-dependency đã cài của pipeline. Import API và khởi tạo pool ở trạng thái đóng đều đạt.
+Đợt bổ sung hiện tại không thêm dependency, không đổi dependency đã cài của pipeline.
 Chưa chạy riêng trên Python 3.11/3.12 hoặc container Linux.
 
 Lệnh Backend sau sửa:
 
 ```powershell
-.\.venv\Scripts\python.exe -B -m pytest tests/unit/test_api.py tests/integration/test_api_http.py -q -ra -p no:cacheprovider
+.\.venv\Scripts\python.exe -B -m pytest tests/unit/test_api.py tests/unit/test_api_cache.py tests/integration/test_api_http.py -q -ra -p no:cacheprovider
 ```
 
-Log: `212 passed, 1 warning in 5.79s`.
+Log: `253 passed, 1 warning in 7.12s` (212 tests Backend cũ và 41 tests mới).
 
 Regression cuối được gọi bằng `pytest.main` với `-q -ra -p no:cacheprovider` và
 `--basetemp` trỏ vào TemporaryDirectory ngoài repository. Đặt `PYTHONDONTWRITEBYTECODE=1`,
@@ -114,20 +149,25 @@ Không đặt TEST_DATABASE_URL vì chưa có DB test được cung cấp. Lện
 Log:
 
 ```text
-225 passed, 9 skipped, 1 warning in 80.65s (0:01:20)
+266 passed, 9 skipped, 1 warning in 77.31s (0:01:17)
 SKIPPED: Chưa có TEST_DATABASE_URL; không tuyên bố đã kiểm thử PostgreSQL thật.
 WARNING: StarletteDeprecationWarning: Using httpx with starlette.testclient is deprecated.
 ```
 
-Gồm 212 tests Backend và 13 tests cũ của dự án; 9 tests PostgreSQL thật skipped.
-Kết quả trước bản vá là 158 passed, 9 skipped. Warning còn lại là deprecation
+Gồm 253 tests Backend và 13 tests cũ của dự án; 9 tests PostgreSQL thật skipped.
+Kết quả trước đợt bổ sung này là 225 passed, 9 skipped. Warning còn lại là deprecation
 của Starlette TestClient/httpx, không phải test thất bại; không ẩn warning thư viện.
+
+Lần chạy regression đầu trong sandbox: 259 passed, 9 skipped, 7 setup errors do
+`PermissionError [WinError 5]` khi pytest tạo thư mục tạm Windows; chưa chạy được 7 test
+cũ cần tmp_path. Chạy lại cùng suite ngoài sandbox đã đạt kết quả 266 passed trên,
+không sửa test/pipeline để né lỗi. Không chạy lệnh ghi/xóa dữ liệu PostgreSQL.
 
 ```powershell
 .\.venv\Scripts\python.exe -B -m ruff check --no-cache src tests run.py
 # All checks passed!
-.\.venv\Scripts\python.exe -B -m ruff format --check --no-cache src/api tests/conftest.py tests/unit/test_api.py tests/integration
-# 12 files already formatted
+.\.venv\Scripts\python.exe -B -m ruff format --check --no-cache src/api tests/conftest.py tests/unit/test_api.py tests/unit/test_api_cache.py tests/integration
+# 14 files already formatted
 .\.venv\Scripts\python.exe -B -m pip check
 # No broken requirements found.
 git diff --check
@@ -140,13 +180,15 @@ localhost tạm, gọi bằng HTTP thật, rồi dừng tiến trình:
 ```text
 /docs                  200
 /openapi.json          200 (đúng 7 paths)
-7 endpoint v1          503 DATABASE_UNAVAILABLE (request hợp lệ nhưng chưa cấu hình DB)
-/api/dates?model_id=bad%00id
-                       422 INVALID_REQUEST
-/api/grids/bad%00id/history?model_id=valid&start=2024-01-01&end=2024-01-01
-                       422 INVALID_REQUEST
+OPTIONS /api/grids      200 cho hai origin mặc định; 400 cho https://untrusted.test
+/health                503 DATABASE_UNAVAILABLE với CORS header cho origin hợp lệ
 Uvicorn smoke passed; no database; process stopped.
 ```
+
+Docker CLI không có (`shutil.which('docker')` trả None). Chỉ kiểm tra tĩnh Dockerfile,
+allowlist, đường dẫn COPY và parse 10 file Python nguồn cần copy bằng grammar Python
+3.12; không đồng nghĩa với chạy Python 3.12 thực tế. Chưa build image, cài dependency
+trong image hay chạy container. Uvicorn smoke ở trên chạy trực tiếp trên Windows.
 
 Tests đã chạy bao gồm response thành công/rỗng cho mọi danh sách, ngày sai/thiếu,
 model/grid sai, alias/version không thay model_id, ngày đầu/cuối/366/367 ngày,

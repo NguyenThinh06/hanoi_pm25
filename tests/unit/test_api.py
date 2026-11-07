@@ -1,5 +1,6 @@
 """Unit checks for routes, SQL binding, validation and pool failures (no real DB)."""
 
+import json
 from contextlib import contextmanager
 from datetime import date
 from unittest.mock import Mock
@@ -10,6 +11,7 @@ from psycopg_pool import PoolClosed, PoolTimeout, TooManyRequests
 from pydantic import ValidationError
 
 from src.api import routes
+from src.api.cache import ResponseCache
 from src.api.config import Settings
 from src.api.database import Database
 from src.api.errors import INTERNAL_MESSAGE, APIError
@@ -20,16 +22,19 @@ from src.api.schemas import Polygon, finite_or_none, parse_day, validate_identif
 @pytest.mark.parametrize("endpoint", range(7))
 def test_each_route_unit(repo, model_id, grid_id, endpoint):
     day = date(2024, 1, 15)
+    cache = ResponseCache().begin()
     calls = [
         lambda: routes.health(repo),
         lambda: routes.models(repo),
-        lambda: routes.dates(repo, model_id),
-        lambda: routes.grids(repo),
+        lambda: routes.dates(repo, model_id, cache),
+        lambda: routes.grids(repo, cache),
         lambda: routes.map_values(repo, day, model_id),
         lambda: routes.history(repo, grid_id, model_id, day, day),
         lambda: routes.stations(repo, day),
     ]
     result = calls[endpoint]()
+    if endpoint in (2, 3):
+        result = json.loads(result.body)
     if endpoint == 0:
         assert result.model_dump() == {"status": "ok", "database": "ready"}
         repo.ready.assert_called_once()

@@ -21,8 +21,8 @@ Không commit `.env` hay chuỗi kết nối có mật khẩu. Tham khảo các 
 trong `.env.example`; Backend không tự tạo mật khẩu hay suy đoán cấu hình kết nối.
 
 ```powershell
-# Chỉ cần nếu Frontend gọi khác origin; thay bằng origin thực tế của nhóm.
-$env:API_CORS_ORIGINS = "http://localhost:5173,http://127.0.0.1:5173"
+# Hai origin React này đã là mặc định; có thể thay bằng origin triển khai thực tế.
+$env:API_CORS_ORIGINS = "http://localhost:5173,http://localhost:3000"
 .\.venv\Scripts\python.exe -m uvicorn src.api.main:app --host 127.0.0.1 --port 8000 --reload
 ```
 
@@ -75,7 +75,8 @@ một lớp bảo vệ bổ sung, không thay cho phân quyền DB.
 | `API_DB_POOL_TIMEOUT` | `3` | Giây chờ lấy kết nối |
 | `API_DB_CONNECT_TIMEOUT` | `3` | Giây chờ mở kết nối PostgreSQL |
 | `API_DB_STATEMENT_TIMEOUT_MS` | `5000` | Giới hạn thời gian mỗi câu SQL |
-| `API_CORS_ORIGINS` | rỗng | Các origin cách nhau bằng dấu phẩy; mặc định cùng origin |
+| `API_CORS_ORIGINS` | `http://localhost:5173,http://localhost:3000` | Các origin cách nhau bằng dấu phẩy; giá trị khai báo thay thế toàn bộ mặc định, rỗng để tắt CORS |
+| `API_CACHE_TTL_SECONDS` | `300` | TTL cache dates/grids theo giây; `0` tắt cache; phải hữu hạn, không âm |
 
 Pool giới hạn 64 request đang chờ. Lỗi kết nối/driver (`OperationalError`, `InterfaceError`),
 timeout truy vấn và pool cạn/đóng trả 503 `DATABASE_UNAVAILABLE`.
@@ -127,11 +128,124 @@ Tính duy nhất do PK `(grid_id,date,model_id)` bảo đảm. Không cache pred
 trả dữ liệu cũ trong thời gian import. Client tải/cache geometry riêng theo contract.
 Mốc <200ms phải đo trên DB đã nạp đủ dữ liệu; tests mock không chứng minh hiệu năng.
 
+## Frontend React và CORS
+
+Frontend chạy tại `http://localhost:5173` hoặc `http://localhost:3000` được phép gọi
+API mặc định. CORS chỉ cho GET và các header Accept/Content-Type; preflight OPTIONS
+được middleware xử lý, không thêm endpoint nghiệp vụ hay thay OpenAPI v1.
+Origin khác không có `Access-Control-Allow-Origin`; preflight bị từ chối bằng 400.
+CORS là chính sách trình duyệt, không phải cơ chế đăng nhập/chặn HTTP client.
+
+```javascript
+// .env.local của Frontend: VITE_API_BASE_URL=http://localhost:8000
+const base = import.meta.env.VITE_API_BASE_URL;
+const query = new URLSearchParams({ model_id: selectedModelId });
+const response = await fetch(`${base}/api/dates?${query}`);
+const body = await response.json();
+if (!response.ok) throw new Error(body.error.message);
+```
+
+Khi triển khai, đặt `API_CORS_ORIGINS=https://dashboard.example.com` qua environment
+của Backend, không dùng wildcard. Biến môi trường ưu tiên hơn `.env`; chuỗi rỗng
+tắt middleware. `http://127.0.0.1:5173` khác `http://localhost:5173`, không tự động được
+cho phép: nếu nhóm dùng địa chỉ đó, thêm rõ vào danh sách phân cách bằng dấu phẩy.
+Origin không có đường dẫn hoặc dấu `/` cuối; khởi động lại API sau khi đổi cấu hình.
+
+## Cache RAM cho dates và grids
+
+`src/api/cache.py` dùng OrderedDict/LRU, Lock và đồng hồ monotonic; không thêm
+dependency. Khóa dates là `(dates, model_id)` đầy đủ; grids dùng một khóa chung
+cho toàn bộ FeatureCollection. Cache chỉ chứa bytes JSON bất biến đã được kiểm tra
+bằng DatesResponse/GridsResponse; không chứa repository, cursor, connection hay
+transaction. Mỗi lần trả tạo Response mới, nên header CORS và dữ liệu không bị sửa chéo.
+
+Chọn lớp cache nhỏ thay `@lru_cache` vì cần TTL, giới hạn byte và chỉ công bố cache
+sau khi dependency trả connection thành công. Nếu validation, truy vấn hoặc kết thúc
+transaction lỗi, dữ liệu chờ ghi bị bỏ. Không cache 404/422/500/503. Kết quả rỗng 200
+được cache; `/health`, `/api/models`, `/api/map`, `/history`, `/api/stations` không cache.
+Thứ tự kết thúc dependency theo [FastAPI dependencies with yield](https://fastapi.tiangolo.com/tutorial/dependencies/dependencies-with-yield/).
+
+Giới hạn mỗi app/worker: 129 entry (dư chỗ cho một GeoJSON và các model), 32 MiB tổng
+payload JSON và khóa UTF-8; overhead đối tượng Python và response đang xử lý không nằm
+trong mức 32 MiB này. Entry quá lớn không được lưu, response vẫn trả bình thường.
+Entry ít dùng nhất bị loại khi chạm giới hạn. TTL mặc định 300 giây tính từ lúc bắt đầu
+load, không kéo dài khi đọc cache. Hết hạn thì request tiếp theo truy vấn lại DB.
+Các request đồng thời khi cache chưa có có thể cùng truy vấn; Lock bảo vệ cấu trúc RAM,
+không giữ khóa trong lúc chạy SQL. Chưa đo hiệu năng trên 3.610 ô hoặc production.
+
+**Sau import/cập nhật/xóa dữ liệu Gói 1:** chờ import commit xong rồi khởi động lại
+**tất cả worker/container API** để bỏ cache ngay, hoặc chấp nhận tối đa TTL dữ liệu cũ
+tính từ lần load cuối. Nếu vẫn phục vụ khi import chưa xong, cache có thể chụp dữ liệu
+chưa đầy đủ; Gói 4 nên chỉ mở serving sau khi import hoàn tất. Cache riêng mỗi process,
+không có Redis/shared cache hay cơ chế tự phát hiện importer. Có thể tắt cache bằng
+`API_CACHE_TTL_SECONDS=0` khi đối soát dữ liệu.
+
+`app.state.response_cache.clear()` dùng được **trong process đang phục vụ** (tests hoặc
+hook nội bộ); lệnh Python từ terminal khác không xóa cache của Uvicorn đang chạy.
+Không thêm endpoint xóa cache. Clear cũng chặn request đang tải dở ghi lại dữ liệu cũ.
+Nếu DB mất kết nối khi cache còn hiệu lực, hai endpoint có thể trả dữ liệu đã cache;
+`/health` vẫn truy vấn DB và trả 503. Khi cache hết hạn, DB vẫn lỗi thì trả 503,
+không kéo dài TTL để phục vụ dữ liệu cũ. Model bị xóa có thể còn trong dates đến lần
+làm mới; restart sau thay đổi danh mục nếu cần hiệu lực ngay.
+
+## Container Backend và tích hợp Gói 4
+
+`Dockerfile` dùng Python 3.12 slim, WORKDIR `/app`, chỉ cài `requirements-api.txt` và
+copy `src/__init__.py`, `src/api/`. Chạy UID/GID 10001 không phải root, Uvicorn
+`0.0.0.0:8000`, không reload. `.dockerignore` dùng allowlist để loại `.git`, `.venv`,
+`.env*`, dữ liệu, model, tests và artifacts khỏi build context. Nếu Gói 4 thêm Dockerfile
+cho dịch vụ khác, cần dùng context hoặc ignore riêng phù hợp.
+
+```powershell
+docker build -t hanoi-pm25-api:local .
+# Smoke khi chưa có DB: /docs 200, /health 503 DATABASE_UNAVAILABLE là kết quả dự kiến.
+docker run --rm -d --name hanoi-pm25-api-smoke -p 127.0.0.1:8000:8000 hanoi-pm25-api:local
+curl.exe -i http://localhost:8000/docs
+curl.exe -i http://localhost:8000/health
+docker stop hanoi-pm25-api-smoke
+```
+
+Khi chạy thật, truyền biến môi trường lúc run; `-e DATABASE_URL` lấy giá trị đã được
+đặt trong shell mà không ghi mật khẩu vào lệnh/Dockerfile. Với PostgreSQL trong cùng
+Docker network, hostname phải là tên service DB (`db` trong Compose hiện tại), port 5432.
+
+```powershell
+# DATABASE_URL đã được cấu hình bằng DSN do nhóm cung cấp, có hostname đúng network.
+docker run --rm --name hanoi-pm25-api --network hanoi_pm25_default -p 8000:8000 -e DATABASE_URL -e API_CORS_ORIGINS=http://localhost:5173,http://localhost:3000 -e API_CACHE_TTL_SECONDS=300 hanoi-pm25-api:local
+```
+
+Tên network trên chỉ là ví dụ mặc định, cần kiểm tra tên project/network thực tế.
+Ví dụ service **để Gói 4 tự ghép**, chưa sửa `docker-compose.yml`:
+
+```yaml
+services:
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8000"
+    environment:
+      DATABASE_URL: ${API_DATABASE_URL:?Set a PostgreSQL DSN using host db}
+      API_CORS_ORIGINS: ${API_CORS_ORIGINS:-http://localhost:5173,http://localhost:3000}
+      API_CACHE_TTL_SECONDS: ${API_CACHE_TTL_SECONDS:-300}
+    depends_on:
+      db:
+        condition: service_healthy
+```
+
+`API_DATABASE_URL` là biến đầu vào cho ví dụ Compose, được ánh xạ sang DATABASE_URL
+trong container; đặt local và không commit. `localhost` trong container API là chính
+container API, không phải DB. DB healthy chỉ xác nhận DB lên, không xác nhận đã migrate/
+import. Sau khi cập nhật dữ liệu, Gói 4 có thể restart service `api` sau khi đã tích hợp.
+Máy triển khai hiện chưa có Docker CLI: Dockerfile mới chỉ được kiểm tra tĩnh,
+**chưa build image/chạy container**. Cần Gói 4 thực hiện các lệnh smoke trên.
+
 ## Kiểm thử
 
 ```powershell
 # Unit Backend + HTTP integration với repository giả; không cần PostgreSQL
-.\.venv\Scripts\python.exe -m pytest tests/unit/test_api.py tests/integration/test_api_http.py -q
+.\.venv\Scripts\python.exe -m pytest tests/unit/test_api.py tests/unit/test_api_cache.py tests/integration/test_api_http.py -q
 
 # PostgreSQL thật, DB đã migration và import bởi Gói 1
 # Gán TEST_DATABASE_URL bằng DSN test do nhóm cung cấp, không đưa mật khẩu vào Git.
@@ -150,6 +264,9 @@ rỗng, validation, model/grid sai, giới hạn ngày, QC, CORS, OpenAPI và l�
 Có tests qua repository thật với kết nối SQL giả để kiểm tra phân loại lỗi,
 kết nối được tái sử dụng/trả lại và lỗi kết thúc giao dịch trước khi gửi response.
 Regression tests NUL xác nhận 422 ngay cả khi chưa cấu hình DB.
+`tests/unit/test_api_cache.py` kiểm tra TTL/LRU, giới hạn byte, concurrency, clear,
+payload bất biến và cấu hình. HTTP tests bổ sung CORS preflight, cache hit không lấy
+connection, tách model, lỗi query/transaction không cache, refresh và cô lập từng app.
 Có thêm thử kết nối TCP bị từ chối bằng pool psycopg thật trên port local không listen;
 đây là bằng chứng nhánh lỗi mạng, **không phải truy vấn thành công PostgreSQL thật**.
 
@@ -202,11 +319,11 @@ git diff
 git ls-files --others --exclude-standard
 
 # Sau khi tự xem và xác nhận đúng phạm vi:
-git add src/api tests/conftest.py tests/unit/test_api.py tests/integration/test_api_http.py tests/integration/test_api_postgres.py requirements-api.txt requirements-api-dev.txt requirements.txt pyproject.toml README.md docs/BACKEND.md docs/BACKEND_VALIDATION.md
+git add .env.example .dockerignore Dockerfile src/api/cache.py src/api/config.py src/api/main.py src/api/routes.py tests/unit/test_api.py tests/unit/test_api_cache.py tests/integration/test_api_http.py docs/BACKEND.md docs/BACKEND_VALIDATION.md
 git diff --cached --stat
 git diff --cached --check
 git diff --cached
-git commit -m "feat(api): implement package 2 contract v1 with tests"
+git commit -m "feat(api): add React CORS defaults, bounded RAM cache and Docker image"
 git push -u origin feature/package-2-api
 ```
 
