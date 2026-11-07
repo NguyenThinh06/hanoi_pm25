@@ -13,6 +13,10 @@ extend-exclude = [".test_tmp*", ".venv", "data", "outputs", "archive"]
 select = ["E", "F", "I", "W"]
 
 [tool.pytest.ini_options]
-testpaths = ["tests/unit"]
+testpaths = ["tests/unit", "tests/integration"]
 norecursedirs = [".test_tmp*", ".venv", "data", "outputs", "archive", ".git"]
 pythonpath = ["."]
+markers = [
+    "integration: HTTP integration tests using a fake repository (no PostgreSQL)",
+    "postgres: read-only integration tests requiring TEST_DATABASE_URL and real PostGIS data",
+]
