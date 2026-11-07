@@ -68,6 +68,11 @@ FCT_GRID_SATELLITE_DAILY = DATA / "core" / "fct_grid_satellite_daily.parquet"
 MART_GRID_DAILY = DATA / "marts" / "mart_grid_daily_features.parquet"
 MART_STATION_TRAINING = DATA / "marts" / "mart_station_daily_training.parquet"
 
+OUTPUTS = ROOT / "outputs"
+OUTPUTS_EVALUATION = OUTPUTS / "evaluation"
+OUTPUTS_MODELS = OUTPUTS / "models"
+OUTPUTS_REGISTRY = OUTPUTS / "registry"
+
 
 def months(start: date = START_DATE, end: date = END_DATE) -> list[date]:
     """Danh sách ngày đầu tháng trong [start, end]."""

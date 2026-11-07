@@ -10,15 +10,23 @@ __pycache__/
 # Environments & Secrets
 .env
 .env.*
+!.env.example
 .venv/
 env/
 venv/
 
-# Du lieu Lakehouse (luu cuc bo, khong day len Git)
+# Du lieu Lakehouse & Outputs (luu cuc bo, khong day len Git)
 data/raw/
 data/staging/
 data/core/
 data/marts/
+outputs/
+# Local-only deployment drafts; not part of the data/model handover.
+/sql/
+/handover_bundles/
+/HANDOVER_MANIFEST.json
+archive/*
+!archive/README.md
 *.parquet
 *.tmp*
 

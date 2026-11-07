@@ -7,12 +7,12 @@ requires-python = ">=3.11"
 [tool.ruff]
 line-length = 120
 target-version = "py312"
-extend-exclude = [".test_tmp*", ".venv", "data"]
+extend-exclude = [".test_tmp*", ".venv", "data", "outputs", "archive"]
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "W"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests/unit"]
-norecursedirs = [".test_tmp*", ".venv", "data", ".git"]
+norecursedirs = [".test_tmp*", ".venv", "data", "outputs", "archive", ".git"]
 pythonpath = ["."]
