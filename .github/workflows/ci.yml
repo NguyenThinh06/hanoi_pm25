@@ -1,4 +1,4 @@
-name: HANOI_PM25 CI Pipeline
+name: HANOI_PM25 CI 
 
 on:
   push:
