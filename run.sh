@@ -37,7 +37,13 @@ fi
 
 # 4. Khởi động Docker Compose
 echo -e "\n[4/5] Khởi động cụm dịch vụ Docker (PostGIS, Importer, FastAPI, Nginx)..."
-docker compose up -d --build
+if [ "${1:-}" = "--build" ]; then
+    echo "  -> Đang build lại các container (--build)..."
+    docker compose up -d --build
+else
+    echo "  -> Khởi động container (sử dụng cache hiện có)..."
+    docker compose up -d
+fi
 
 # 5. Chờ hệ thống sẵn sàng
 echo -e "\n[5/5] Đang chờ hệ thống nạp dữ liệu và sẵn sàng phục vụ..."

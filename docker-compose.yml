@@ -28,6 +28,7 @@ services:
     container_name: hanoi_pm25_importer
     environment:
       DATABASE_URL: postgresql://${POSTGRES_USER:-hanoi_pm25}:${POSTGRES_PASSWORD:-hanoi_pm25_secret}@db:5432/${POSTGRES_DB:-hanoi_pm25}
+      IMPORT_SMOKE_MONTH: ${IMPORT_SMOKE_MONTH:-2024-01}
     volumes:
       - ./:/workspace:ro
     working_dir: /workspace

@@ -14,9 +14,17 @@
 #>
 
 [CmdletBinding()]
-param()
+param(
+    [switch]$Build,
+    [switch]$FullData
+)
 
 $ErrorActionPreference = "Stop"
+
+if ($FullData) {
+    $env:IMPORT_SMOKE_MONTH = "all"
+    Write-Host "  [Cấu hình] Chế độ nạp toàn bộ 15.15 triệu bản ghi 5 năm." -ForegroundColor Cyan
+}
 
 Write-Host "================================================================================" -ForegroundColor Cyan
 Write-Host "     PM2.5 HÀ NỘI — KHỞI ĐỘNG TOÀN BỘ HỆ THỐNG 1-CHẠM (DOCKER COMPOSE)          " -ForegroundColor Cyan
@@ -63,7 +71,13 @@ if (-not (Test-Path "HANDOVER_MANIFEST.json")) {
 
 # 4. Khởi động Docker Compose
 Write-Host "`n[4/5] Khởi động cụm dịch vụ Docker (PostGIS, Importer, FastAPI, Nginx)..." -ForegroundColor Yellow
-docker compose up -d --build
+if ($Build) {
+    Write-Host "  -> Đang build lại các container (--build)..." -ForegroundColor White
+    docker compose up -d --build
+} else {
+    Write-Host "  -> Khởi động container (sử dụng cache hiện có)..." -ForegroundColor White
+    docker compose up -d
+}
 
 Write-Host "`n[5/5] Đang chờ hệ thống nạp dữ liệu và sẵn sàng phục vụ..." -ForegroundColor Yellow
 $timeout = 180
