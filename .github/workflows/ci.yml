@@ -1,4 +1,4 @@
-name: Hanoi PM2.5 CI
+name: HANOI_PM25 CI Pipeline
 
 on:
   push:
@@ -16,7 +16,7 @@ concurrency:
 
 jobs:
   ci:
-    name: Build, Test & Validate
+    name: "Build, Test & Validate"
     runs-on: ubuntu-latest
     timeout-minutes: 15
 
