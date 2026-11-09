@@ -1,0 +1,23 @@
+{
+  "name": "hanoi-pm25-dashboard",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "mock": "node mock-api.mjs",
+    "build": "vite build",
+    "preview": "vite preview",
+    "test": "node --test src/lib.test.js"
+  },
+  "dependencies": {
+    "leaflet": "^1.9.4",
+    "react": "^19.3.1",
+    "react-dom": "^19.3.1"
+  },
+  "devDependencies": {
+    "@tailwindcss/vite": "^4.3.5",
+    "@vitejs/plugin-react": "^6.2.1",
+    "tailwindcss": "^4.3.5",
+    "vite": "^8.3.6"
+  }
+}

@@ -1,0 +1,22 @@
+[project]
+name = "pm25-hanoi"
+version = "1.0.0"
+description = "Data pipeline PM2.5 Ha Noi (OpenAQ, ERA5/ERA5-Land, Sentinel-5P, MODIS MAIAC, VIIRS)"
+requires-python = ">=3.11"
+
+[tool.ruff]
+line-length = 120
+target-version = "py312"
+extend-exclude = [".test_tmp*", ".venv", "data", "outputs", "archive"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "W"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests/unit", "tests/integration"]
+norecursedirs = [".test_tmp*", ".venv", "data", "outputs", "archive", ".git"]
+pythonpath = ["."]
+markers = [
+    "integration: HTTP integration tests using a fake repository (no PostgreSQL)",
+    "postgres: read-only integration tests requiring TEST_DATABASE_URL and real PostGIS data",
+]

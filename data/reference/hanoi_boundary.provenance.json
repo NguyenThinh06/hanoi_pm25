@@ -1,0 +1,80 @@
+{
+  "file": "data/reference/hanoi_boundary.geojson",
+  "verification_status": "verified_against_publisher_archive",
+  "publisher": "OCHA Regional Office for Asia and the Pacific (ROAP); OCHA FIS / HDX",
+  "original_provider": "General Statistics Office of Vietnam (GSO)",
+  "source_url": "https://data.humdata.org/dataset/cod-ab-vnm",
+  "downloaded_at": "2026-10-25T21:34:33.754113+00:00",
+  "administrative_vintage": "2025-07-01",
+  "reviewed_and_valid_on": "2025-09-25",
+  "dataset_version": "02",
+  "license": "Creative Commons Attribution 3.0 IGO (CC BY 3.0 IGO)",
+  "license_url": "https://creativecommons.org/licenses/by/3.0/igo/",
+  "attribution": "General Statistics Office of Vietnam (GSO), Viet Nam - Subnational Administrative Boundaries (COD-AB), version 02; distributed by OCHA ROAP / FIS via HDX. Hanoi feature extracted without geometry modification.",
+  "source": {
+    "metadata_api_url": "https://data.humdata.org/api/3/action/package_show?id=cod-ab-vnm",
+    "dataset_id": "3cb544a9-9d04-4f54-94e2-93230efd8ceb",
+    "resource_id": "048a6012-a8c2-4fa9-be87-cb6c01e9afbf",
+    "resource_last_modified": "2026-01-26T16:32:03.691546",
+    "download_url": "https://data.humdata.org/dataset/3cb544a9-9d04-4f54-94e2-93230efd8ceb/resource/048a6012-a8c2-4fa9-be87-cb6c01e9afbf/download/vnm_admin_boundaries.geojson.zip",
+    "archive_sha256": "0a74e8ee18eb84b21f980fa4bd2a3135d2bc42fbd6e31450472368ff48abe41b",
+    "archive_member": "vnm_admin1.geojson",
+    "local_archive": "data/raw/boundary_sources/hdx_2025.zip",
+    "metadata_notes": "Viet Nam administrative level 0-1 boundaries (COD-AB) dataset version 02.  \n  \nThis dataset is structured into 1 level:  \n- Admin 1: 34 Province  \n  \n  \nDates associated with this dataset:  \n- 25 September 2025: dataset reviewed for accuracy and completeness  \n- 25 September 2025: valid for use by the humanitarian community  \n- 25 September 2025: last edit to the dataset before publishing  \n- 01 July 2025: boundaries created by the source  \n  \nContributed by [OCHA Regional Office for Asia and the Pacific (ROAP)](https://data.humdata.org/organization/ocha-roap).  \nQuality assured, configured, and published by [OCHA Field Information Services (FIS)](https://data.humdata.org/organization/ocha-fiss) and [HDX](https://data.humdata.org/organization/hdx).  \n  \nPart of the dataset: [Global Subnational Administrative Boundaries](https://data.humdata.org/dataset/cod-ab-global)",
+    "metadata_license_id": "cc-by-igo"
+  },
+  "selection": {
+    "field": "adm1_pcode",
+    "value": "VN01",
+    "expected_name": "Ha Noi"
+  },
+  "crs": "EPSG:4326",
+  "processing_history": [
+    "Verify SHA-256 of downloaded HDX ZIP.",
+    "Read vnm_admin1.geojson and select exactly one adm1_pcode=VN01 feature.",
+    "Preserve original properties, coordinates, rings and vertex order; no simplification, buffering or geometry repair.",
+    "Serialize a UTF-8 FeatureCollection with indent=2 and a trailing LF."
+  ],
+  "temporal_policy": "Use the fixed 2025 Hanoi ADM1 footprint as the common analysis domain for all dates 2021-2025; not a claim of year-specific historical legal boundaries.",
+  "selection_rationale": "Direct GSO-origin COD-AB release reviewed by OCHA, with identifiable version, open attribution license and detailed original geometry. Preferred to the traced 2008 Wikipedia-derived gbOpen file. The archived 2020 Government/HDX gbHumanitarian release was compared as a historical alternative.",
+  "limitations": [
+    "Research analysis boundary, not a cadastral survey or legal demarcation certificate.",
+    "Area computed in EPSG:3405 is not expected to equal the source area_sqkm attribute exactly."
+  ],
+  "superseded_boundary": {
+    "sha256": "36c45bf64a4abe05bfab751b456b79fe527e84be15ded7c25a9ecf6efcbfdcbf",
+    "source": "geoBoundaries gbOpen VNM ADM1, VNM-ADM1-63759600",
+    "metadata_url": "https://www.geoboundaries.org/api/current/gbOpen/VNM/ADM1/",
+    "upstream_url": "https://media.githubusercontent.com/media/wmgeolab/geoBoundaries/9469f09/releaseData/gbOpen/VNM/ADM1/geoBoundaries-VNM-ADM1.geojson",
+    "upstream_sha256": "25dbc2fec9862016710118fc98042d3e803830c72361c91c4e864ae668fa9541",
+    "year_represented": "2008",
+    "provider": "geoBoundaries, Wikipedia",
+    "verification": "Selected VN-HN feature geometry equals the previous project geometry."
+  },
+  "sha256": "d8194abcc1d89eadd836941a750ae339f398a9b2e5e9d2428d0f96f1f2bd1f77",
+  "embedded_properties": {
+    "adm1_name": "Ha Noi",
+    "adm1_name1": "Hà Nội",
+    "adm1_name2": null,
+    "adm1_name3": null,
+    "adm1_pcode": "VN01",
+    "adm0_name": "Viet Nam",
+    "adm0_name1": "Việt Nam",
+    "adm0_name2": null,
+    "adm0_name3": null,
+    "adm0_pcode": "VN",
+    "valid_on": "2025-09-25",
+    "valid_to": null,
+    "area_sqkm": 3359.77,
+    "version": "v02",
+    "lang": "en",
+    "lang1": "vi",
+    "lang2": null,
+    "lang3": null,
+    "adm1_ref_name": null,
+    "center_lat": null,
+    "center_lon": null,
+    "adm1_type_en": "City",
+    "adm1_type_vi": "Thành phố"
+  }
+}

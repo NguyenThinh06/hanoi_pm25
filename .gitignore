@@ -3,29 +3,45 @@ __pycache__/
 *.py[cod]
 *$py.class
 *.so
+.pytest_cache/
+.ruff_cache/
+.test_tmp*/
 
-# Environments
+# Environments & Secrets
+.env
+.env.*
+!.env.example
 .venv/
 env/
 venv/
-ENV/
 
-# Dữ liệu Lakehouse (Chỉ lưu máy cục bộ, tuyệt đối không push lên Git)
+# Du lieu Lakehouse & Outputs (luu cuc bo, khong day len Git)
 data/raw/
 data/staging/
+data/core/
 data/marts/
-data/predictions/
+outputs/
+# Local-only deployment drafts; not part of the data/model handover.
+/sql/
+/handover_bundles/
+# Handover bundle extracted directories
+/geometry/
+/metadata/
+/predictions/
+/stations/
+/HANDOVER_MANIFEST.json
+archive/*
+!archive/README.md
+!archive/HANDOVER.md
+!archive/DEPLOYMENT.md
+!archive/BACKEND.md
+!archive/report.md
+!archive/model_report.md
 *.parquet
-*.tmp
+*.tmp*
 
-# Ngoại lệ: Cho phép push ranh giới và manifest
+# Chi giu file ranh gioi tham chieu Ha Noi
 !data/reference/
-!data/manifests/
-
-# Model checkpoints & logs
-models/*.pkl
-models/*.txt
-*.log
 
 # IDE & OS
 .vscode/
