@@ -1,6 +1,8 @@
 # HANOI_PM25 — Spatial Data Lakehouse Pipeline (01/2021 – 09/2026)
 
+Triển khai trọn gói (Gói 4): xem [Hướng dẫn triển khai 1-chạm Docker Compose, Đối soát 3 điểm & Vận hành](docs/DEPLOYMENT.md).
 Backend FastAPI Gói 2: xem [hướng dẫn chạy, API Contract v1 và kiểm thử](docs/BACKEND.md).
+Frontend React Dashboard Gói 3: xem [hướng dẫn phát triển giao diện](frontend/README.md).
 
 Pipeline thu thập, chuẩn hóa và kết hợp dữ liệu không-thời gian để **ước tính hồi cứu nồng độ PM2.5 trung bình ngày** trên lưới **1 km × 1 km (EPSG:3405)** tại Hà Nội, trong giai đoạn cấu hình **01/01/2021 – 30/09/2026** (múi giờ `Asia/Ho_Chi_Minh`, UTC+7). Nhãn huấn luyện là số đo trạm OpenAQ; đặc trưng gồm lịch, tọa độ, khí tượng và vệ tinh. Kết quả là ước tính hồi cứu của mô hình, không phải số đo tại từng ô hay dự báo ngày tiếp theo.
 
