@@ -1,6 +1,11 @@
 // API giả theo Hợp đồng v1 (docs/HANDOVER.md mục 5) để dev UI khi chưa có Gói 2.
-// Số liệu là giả lập. Chạy: npm run mock (cổng 8000).
+// Sử dụng hình học lưới GIS thực tế từ outputs/handover_staging/geometry/dim_grid_1km_epsg4326.parquet.
+// Chạy: npm run mock (cổng 8000).
 import { createServer } from 'node:http'
+import { readFileSync } from 'node:fs'
+
+const gridsJson = JSON.parse(readFileSync(new URL('./mock-grids.json', import.meta.url), 'utf8'))
+const rawStations = JSON.parse(readFileSync(new URL('./mock-stations.json', import.meta.url), 'utf8'))
 
 const B1 = 'Baseline_1_OpenAQ_Meteo:v2.0.0-retrospective'
 const B2 = 'Baseline_2_OpenAQ_Meteo_Sat:v2.0.0-retrospective'
@@ -16,35 +21,25 @@ const iso = (t) => new Date(t).toISOString().slice(0, 10)
 const dates = Array.from({ length: (MAX - MIN) / DAY + 1 }, (_, i) => iso(MIN + i * DAY))
 const dateSet = new Set(dates)
 
-const COLS = 61 // 61 × 60 ≈ 3.660, cắt còn 3.610 ô
-const cells = []
-for (let n = 0; n < 60; n++) {
-  for (let e = 0; e < COLS; e++) {
-    if (cells.length < 3610) cells.push({ id: `grid_${555000 + e * 1000}_${2300000 + n * 1000}`, e, n })
-  }
-}
+const cells = gridsJson.features.map((f) => ({
+  id: f.properties.grid_id,
+  lon: f.properties.centroid_lon,
+  lat: f.properties.centroid_lat,
+}))
 const cellMap = new Map(cells.map((c) => [c.id, c]))
-const lon = (e) => 105.3 + e * 0.0096
-const lat = (n) => 20.75 + n * 0.009
 
 const noise = (a) => Math.abs(Math.sin(a * 127.1) * 43758.5453) % 1
 
 function pm25(c, date, model) {
   const day = Date.parse(date) / DAY
   const season = 30 + 22 * Math.cos((2 * Math.PI * (day - 15)) / 365.25)
-  const urban = 40 * Math.exp(-((c.e - 30) ** 2 + (c.n - 30) ** 2) / 300)
+  const dCenter = ((c.lon - 105.85) * 100) ** 2 + ((c.lat - 21.03) * 110) ** 2
+  const urban = 40 * Math.exp(-dCenter / 150)
   const daily = 25 * noise(day)
-  const bias = model === B2 ? 4 * Math.sin((c.e + c.n) / 6) : 0
-  return Math.max(0, season + urban + daily + bias + 3 * noise(c.e * 13 + c.n))
+  const bias = model === B2 ? 4 * Math.sin(c.lon * 10 + c.lat * 10) : 0
+  const localNoise = 3 * noise(c.lon * 1000 + c.lat * 500)
+  return Math.max(0, season + urban + daily + bias + localNoise)
 }
-
-const stations = [
-  ['openaq_2161290', 'United States Embassy Hanoi', 30, 30, 'valid'],
-  ['openaq_1001', 'Trạm Hoàn Kiếm', 32, 31, 'valid'],
-  ['openaq_1002', 'Trạm Hà Đông', 25, 25, 'partial'],
-  ['openaq_1003', 'Trạm Sóc Sơn', 28, 50, 'valid'],
-  ['openaq_1004', 'Trạm mất tín hiệu', 15, 18, 'missing'],
-].map(([station_id, station_name, e, n, kind]) => ({ station_id, station_name, e, n, kind }))
 
 const fail = (status, code, message) => ({ status, body: { error: { code, message } } })
 const badDate = (d) => !/^\d{4}-\d{2}-\d{2}$/.test(d ?? '') || Number.isNaN(Date.parse(d))
@@ -61,24 +56,7 @@ function route(path, q) {
     return { body: { model_id, count: dates.length, min_date: dates[0], max_date: dates.at(-1), data: dates } }
   }
   if (path === '/api/grids') {
-    const size = 0.0048
-    return {
-      body: {
-        type: 'FeatureCollection',
-        features: cells.map((c) => {
-          const [x, y] = [lon(c.e), lat(c.n)]
-          return {
-            type: 'Feature',
-            id: c.id,
-            properties: { grid_id: c.id, centroid_lon: x, centroid_lat: y, is_boundary: c.e === 0 || c.n === 0 },
-            geometry: {
-              type: 'Polygon',
-              coordinates: [[[x - size, y - 0.0045], [x + size, y - 0.0045], [x + size, y + 0.0045], [x - size, y + 0.0045], [x - size, y - 0.0045]]],
-            },
-          }
-        }),
-      },
-    }
+    return { body: gridsJson }
   }
   if (path === '/api/map') {
     const date = q.get('date')
@@ -102,15 +80,17 @@ function route(path, q) {
   if (path === '/api/stations') {
     const date = q.get('date')
     if (badDate(date)) return invalid('Ngày không đúng định dạng YYYY-MM-DD.')
-    const data = stations.map(({ station_id, station_name, e, n, kind }) => {
+    const data = rawStations.map((s, i) => {
+      const kind = i % 10 === 0 ? 'missing' : i % 6 === 0 ? 'partial' : 'valid'
       const missing = kind === 'missing'
+      const c = cellMap.get(s.grid_id) ?? { lon: s.longitude, lat: s.latitude }
       return {
-        station_id,
-        station_name,
-        grid_id: cells.find((c) => c.e === e && c.n === n).id,
-        longitude: lon(e),
-        latitude: lat(n),
-        pm25_observed: missing ? null : pm25({ e, n }, date, B1) * 0.9,
+        station_id: s.station_id,
+        station_name: s.station_name,
+        grid_id: s.grid_id,
+        longitude: s.longitude,
+        latitude: s.latitude,
+        pm25_observed: missing ? null : pm25(c, date, B1) * (0.85 + 0.3 * noise(i * 7)),
         pm25_valid_hours: missing ? 0 : kind === 'partial' ? 12 : 24,
         is_valid_day: kind === 'valid',
         has_observation: !missing,

@@ -138,7 +138,7 @@ export default function App() {
   const stations = useGet(date && showStations ? url('/api/stations', { date }) : null)
 
   const values = useMemo(
-    () => new Map(map.data?.data.map((d) => [d.grid_id, d.pm25_pred])),
+    () => new Map(map.data?.data?.map((d) => [d.grid_id, d.pm25_pred]) ?? []),
     [map.data],
   )
   const stationList = stations.data?.data

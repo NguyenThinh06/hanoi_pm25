@@ -18,7 +18,7 @@ const tailwindTokens = {
     const src = join(import.meta.dirname, 'src')
     const tokens = readdirSync(src)
       .filter((f) => f.endsWith('.jsx'))
-      .flatMap((f) => readFileSync(join(src, f), 'utf8').match(/[\w:/.[\]%-]+/g))
+      .flatMap((f) => readFileSync(join(src, f), 'utf8').match(/[\w:/.[\]%-]+/g) ?? [])
     return `${code}\n@source inline("${[...new Set(tokens)].join(' ')}");\n`
   },
 }

@@ -96,7 +96,7 @@ export default function MapView({ geojson, values, stations, selectedId, onSelec
     gridRef.current.eachLayer((l) => {
       if (l.feature.properties.grid_id === selectedId) l.bringToFront()
     })
-    gridRef.current.getTooltip().update() // tooltip đang mở không được giữ giá trị ngày cũ
+    gridRef.current.getTooltip()?.update() // tooltip đang mở không được giữ giá trị ngày cũ
   }, [geojson, values, selectedId])
 
   useEffect(() => {

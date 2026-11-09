@@ -1,0 +1,303 @@
+[
+  {
+    "station_id": "openaq_1285357",
+    "station_name": "SPARTAN - Vietnam Acad. Sci.",
+    "grid_id": "grid_582000_2327000",
+    "longitude": 105.8,
+    "latitude": 21.0478
+  },
+  {
+    "station_id": "openaq_18",
+    "station_name": "SPARTAN - Vietnam Acad. Sci.",
+    "grid_id": "grid_582000_2327000",
+    "longitude": 105.8,
+    "latitude": 21.048
+  },
+  {
+    "station_id": "openaq_2161290",
+    "station_name": "An Khánh",
+    "grid_id": "grid_574000_2322000",
+    "longitude": 105.7181,
+    "latitude": 21.0024
+  },
+  {
+    "station_id": "openaq_2161291",
+    "station_name": "Cầu Diễn",
+    "grid_id": "grid_579000_2326000",
+    "longitude": 105.7652,
+    "latitude": 21.0398
+  },
+  {
+    "station_id": "openaq_2161292",
+    "station_name": "Số 46, phố Lưu Quang Vũ",
+    "grid_id": "grid_582000_2324000",
+    "longitude": 105.7999,
+    "latitude": 21.0152
+  },
+  {
+    "station_id": "openaq_2161293",
+    "station_name": "Chúc Sơn",
+    "grid_id": "grid_573000_2313000",
+    "longitude": 105.7123,
+    "latitude": 20.92
+  },
+  {
+    "station_id": "openaq_2161294",
+    "station_name": "Cung thiếu nhi",
+    "grid_id": "grid_588000_2325000",
+    "longitude": 105.8556,
+    "latitude": 21.0284
+  },
+  {
+    "station_id": "openaq_2161295",
+    "station_name": "Đầm Trấu",
+    "grid_id": "grid_589000_2323000",
+    "longitude": 105.8644,
+    "latitude": 21.0119
+  },
+  {
+    "station_id": "openaq_2161296",
+    "station_name": "Đào Duy Từ",
+    "grid_id": "grid_588000_2326000",
+    "longitude": 105.8529,
+    "latitude": 21.0354
+  },
+  {
+    "station_id": "openaq_2161297",
+    "station_name": "Đội Bình",
+    "grid_id": "grid_585000_2283000",
+    "longitude": 105.8204,
+    "latitude": 20.6486
+  },
+  {
+    "station_id": "openaq_2161298",
+    "station_name": "Đông Kinh Nghĩa Thục",
+    "grid_id": "grid_588000_2326000",
+    "longitude": 105.8515,
+    "latitude": 21.032
+  },
+  {
+    "station_id": "openaq_2161299",
+    "station_name": "Hàng Đậu",
+    "grid_id": "grid_587000_2326000",
+    "longitude": 105.8473,
+    "latitude": 21.0399
+  },
+  {
+    "station_id": "openaq_2161300",
+    "station_name": "Hoàn Kiếm",
+    "grid_id": "grid_588000_2325000",
+    "longitude": 105.8515,
+    "latitude": 21.0263
+  },
+  {
+    "station_id": "openaq_2161301",
+    "station_name": "Khương Trung",
+    "grid_id": "grid_584000_2321000",
+    "longitude": 105.8167,
+    "latitude": 20.9949
+  },
+  {
+    "station_id": "openaq_2161302",
+    "station_name": "Kim Bài",
+    "grid_id": "grid_579000_2306000",
+    "longitude": 105.7656,
+    "latitude": 20.858
+  },
+  {
+    "station_id": "openaq_2161303",
+    "station_name": "Kim Liên",
+    "grid_id": "grid_586000_2323000",
+    "longitude": 105.8358,
+    "latitude": 21.0074
+  },
+  {
+    "station_id": "openaq_2161304",
+    "station_name": "Lê Trực",
+    "grid_id": "grid_586000_2326000",
+    "longitude": 105.8329,
+    "latitude": 21.0327
+  },
+  {
+    "station_id": "openaq_2161305",
+    "station_name": "Liên Quan",
+    "grid_id": "grid_559000_2328000",
+    "longitude": 105.578,
+    "latitude": 21.056
+  },
+  {
+    "station_id": "openaq_2161306",
+    "station_name": "Minh Khai - Bắc Từ Liêm",
+    "grid_id": "grid_576000_2327000",
+    "longitude": 105.74,
+    "latitude": 21.05
+  },
+  {
+    "station_id": "openaq_2161307",
+    "station_name": "Mỹ Đình",
+    "grid_id": "grid_580000_2325000",
+    "longitude": 105.7731,
+    "latitude": 21.0269
+  },
+  {
+    "station_id": "openaq_2161308",
+    "station_name": "Phạm Văn Đồng",
+    "grid_id": "grid_581000_2327000",
+    "longitude": 105.782,
+    "latitude": 21.05
+  },
+  {
+    "station_id": "openaq_2161309",
+    "station_name": "Pháp Vân",
+    "grid_id": "grid_588000_2316000",
+    "longitude": 105.8493,
+    "latitude": 20.9481
+  },
+  {
+    "station_id": "openaq_2161310",
+    "station_name": "Quảng Phú Cầu",
+    "grid_id": "grid_581000_2298000",
+    "longitude": 105.7851,
+    "latitude": 20.7793
+  },
+  {
+    "station_id": "openaq_2161311",
+    "station_name": "Sài Sơn",
+    "grid_id": "grid_567000_2324000",
+    "longitude": 105.6478,
+    "latitude": 21.0167
+  },
+  {
+    "station_id": "openaq_2161312",
+    "station_name": "Sóc Sơn",
+    "grid_id": "grid_588000_2350000",
+    "longitude": 105.8514,
+    "latitude": 21.2575
+  },
+  {
+    "station_id": "openaq_2161313",
+    "station_name": "Tân Mai",
+    "grid_id": "grid_588000_2321000",
+    "longitude": 105.8549,
+    "latitude": 20.9883
+  },
+  {
+    "station_id": "openaq_2161314",
+    "station_name": "Tây Hồ Tây",
+    "grid_id": "grid_582000_2328000",
+    "longitude": 105.7974,
+    "latitude": 21.0563
+  },
+  {
+    "station_id": "openaq_2161315",
+    "station_name": "Tây Mỗ",
+    "grid_id": "grid_577000_2323000",
+    "longitude": 105.7485,
+    "latitude": 21.0058
+  },
+  {
+    "station_id": "openaq_2161316",
+    "station_name": "Thành Công",
+    "grid_id": "grid_584000_2324000",
+    "longitude": 105.8147,
+    "latitude": 21.0197
+  },
+  {
+    "station_id": "openaq_2161317",
+    "station_name": "Thanh Xuân - Sóc Sơn",
+    "grid_id": "grid_578000_2347000",
+    "longitude": 105.7583,
+    "latitude": 21.2287
+  },
+  {
+    "station_id": "openaq_2161318",
+    "station_name": "Tứ Liên",
+    "grid_id": "grid_586000_2329000",
+    "longitude": 105.8338,
+    "latitude": 21.0639
+  },
+  {
+    "station_id": "openaq_2161319",
+    "station_name": "Vân Đình",
+    "grid_id": "grid_580000_2292000",
+    "longitude": 105.7703,
+    "latitude": 20.7339
+  },
+  {
+    "station_id": "openaq_2161320",
+    "station_name": "Vân Hà",
+    "grid_id": "grid_594000_2338000",
+    "longitude": 105.9159,
+    "latitude": 21.1476
+  },
+  {
+    "station_id": "openaq_2161321",
+    "station_name": "Văn Quán",
+    "grid_id": "grid_581000_2319000",
+    "longitude": 105.7856,
+    "latitude": 20.972
+  },
+  {
+    "station_id": "openaq_2161322",
+    "station_name": "Võng La",
+    "grid_id": "grid_578000_2334000",
+    "longitude": 105.7605,
+    "latitude": 21.1105
+  },
+  {
+    "station_id": "openaq_2161323",
+    "station_name": "Xuân Mai",
+    "grid_id": "grid_559000_2311000",
+    "longitude": 105.5773,
+    "latitude": 20.8994
+  },
+  {
+    "station_id": "openaq_2539",
+    "station_name": "US Diplomatic Post: Hanoi",
+    "grid_id": "grid_584000_2324000",
+    "longitude": 105.819,
+    "latitude": 21.02177
+  },
+  {
+    "station_id": "openaq_307169",
+    "station_name": "nồng độ pm",
+    "grid_id": "grid_586000_2325000",
+    "longitude": 105.83416,
+    "latitude": 21.02776
+  },
+  {
+    "station_id": "openaq_4946811",
+    "station_name": "556 Nguyễn Văn Cừ",
+    "grid_id": "grid_591000_2327000",
+    "longitude": 105.8831,
+    "latitude": 21.0491
+  },
+  {
+    "station_id": "openaq_4946812",
+    "station_name": "Công viên Nhân Chính - Khuất Duy Tiến",
+    "grid_id": "grid_582000_2322000",
+    "longitude": 105.7947,
+    "latitude": 21.0031
+  },
+  {
+    "station_id": "openaq_4946813",
+    "station_name": "Số 1 đường Giải Phóng - phường Bạch Mai - ĐHBK ",
+    "grid_id": "grid_587000_2323000",
+    "longitude": 105.8418,
+    "latitude": 21.0052
+  },
+  {
+    "station_id": "openaq_6123215",
+    "station_name": "Dragon",
+    "grid_id": "grid_597000_2321000",
+    "longitude": 105.9441,
+    "latitude": 20.9933
+  },
+  {
+    "station_id": "openaq_7441",
+    "station_name": "Hanoi",
+    "grid_id": "grid_584000_2324000",
+    "longitude": 105.81881,
+    "latitude": 21.02194
+  }
+]
