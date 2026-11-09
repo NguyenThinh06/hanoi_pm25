@@ -12,7 +12,7 @@
 [![React](https://img.shields.io/badge/React_SPA-Leaflet_Canvas-61DAFB.svg?style=for-the-badge&logo=react&logoColor=black)](frontend/README.md)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=for-the-badge)](LICENSE)
 
-[🎯 Định Hướng Nghiệp Vụ](docs/business_case.md) • [🗄️ Cấu Trúc Dữ Liệu](docs/schema.md) • [🚀 Triển Khai Docker](archive/DEPLOYMENT.md) • [📚 Thư Viện Tài Liệu](docs/README.md) • [📄 Báo Cáo Kỹ Thuật](archive/report.md)
+[🎯 Định Hướng Nghiệp Vụ](docs/business_case.md) • [🗄️ Cấu Trúc Dữ Liệu](docs/schema.md) • [🚀 Triển Khai Docker](archive/DEPLOYMENT.md) • [📚 Thư Viện Tài Liệu](docs/README.md) • [📄 Báo Cáo Kỹ Thuật](archive/report.md) • [📝 Changelog](CHANGELOG.md)
 
 </div>
 
@@ -191,6 +191,7 @@ pm25_hanoi/
 ├── scripts/                # Bộ công cụ vận hành: import, verify_reconciliation, backup_restore
 ├── src/                    # Mã nguồn cốt lõi: ingest, pipeline, models, api
 ├── tests/                  # Bộ kiểm thử tự động pytest (unit & integration tests)
+├── CHANGELOG.md            # 📜 Lịch sử các phiên bản & tính năng (Keep a Changelog)
 ├── docker-compose.yml      # Cấu hình cụm 4 dịch vụ Docker
 ├── run.ps1 / run.sh        # Script khởi động 1-chạm tự động
 ├── requirements.txt        # Danh sách thư viện Python
