@@ -61,6 +61,9 @@ def test_feature_contract_leakage_and_order(tmp_path: Path) -> None:
 def test_model_reload_and_prediction_match() -> None:
     """Kiểm tra tải lại model từ outputs/models/ và dự đoán khớp mẫu kiểm chứng."""
     model_dir = ROOT / "outputs" / "models" / "baseline1"
+    model_file = model_dir / "model.json"
+    if not model_file.exists():
+        pytest.skip(f"Bỏ qua vì chưa có artifact model tại {model_file} (môi trường CI)")
     model, metadata = load_model_and_metadata(model_dir)
 
     assert metadata["model_id"] == "Baseline_1_OpenAQ_Meteo:v2.0.0-retrospective"
@@ -85,6 +88,8 @@ def test_batch_inference_atomic_and_resume(tmp_path: Path) -> None:
     model_dir = ROOT / "outputs" / "models" / "baseline1"
     data_path = ROOT / "data" / "marts" / "mart_grid_daily_features.parquet"
 
+    if not (model_dir / "model.json").exists():
+        pytest.skip(f"Bỏ qua vì chưa có artifact model tại {model_dir / 'model.json'} (môi trường CI)")
     if not data_path.exists():
         pytest.skip("Chưa có mart_grid_daily_features.parquet để test inference")
 
