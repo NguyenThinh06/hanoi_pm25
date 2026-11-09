@@ -25,14 +25,49 @@ else
     echo "  -> File .env đã tồn tại."
 fi
 
-# 3. Gói dữ liệu
+# 3. Gói dữ liệu (tự động tải từ GitHub Release nếu chưa có)
 echo -e "\n[3/5] Kiểm tra gói dữ liệu bàn giao (Parquet & Geometry)..."
+BUNDLE_NAME="pm25-handover-2026-11-04.tar.gz"
+BUNDLE_TAR="handover_bundles/${BUNDLE_NAME}"
+BUNDLE_URL="https://github.com/NguyenThinh06/hanoi_pm25/releases/download/v1.0.0/${BUNDLE_NAME}"
+BUNDLE_SHA256="0013bae87171042c3822347ff0fc4509ea9da2d95108b41296adc0069dc2b8f0"
+
 if [ ! -f "HANDOVER_MANIFEST.json" ]; then
-    if [ -f "handover_bundles/pm25-handover-2026-11-04.tar.gz" ]; then
-        echo "  -> Đang giải nén gói dữ liệu..."
-        tar -xzf "handover_bundles/pm25-handover-2026-11-04.tar.gz"
-        echo "  -> Giải nén hoàn tất."
+    if [ ! -f "$BUNDLE_TAR" ]; then
+        echo "  -> Chưa có gói dữ liệu. Đang tự động tải từ GitHub Release (~86MB)..."
+        echo "     $BUNDLE_URL"
+        mkdir -p handover_bundles
+        if command -v curl >/dev/null 2>&1; then
+            dl_ok=0; curl -fL --retry 3 -o "${BUNDLE_TAR}.part" "$BUNDLE_URL" && dl_ok=1
+        else
+            dl_ok=0; wget -O "${BUNDLE_TAR}.part" "$BUNDLE_URL" && dl_ok=1
+        fi
+        if [ "$dl_ok" -ne 1 ]; then
+            rm -f "${BUNDLE_TAR}.part"
+            echo "  [LỖI] Không tải được gói dữ liệu. Vui lòng tải thủ công:" >&2
+            echo "    $BUNDLE_URL" >&2
+            echo "  rồi đặt vào thư mục 'handover_bundles/' và chạy lại ./run.sh" >&2
+            exit 1
+        fi
+        mv -f "${BUNDLE_TAR}.part" "$BUNDLE_TAR"
     fi
+
+    if command -v sha256sum >/dev/null 2>&1; then
+        actual_sha=$(sha256sum "$BUNDLE_TAR" | awk '{print $1}')
+    else
+        actual_sha=$(shasum -a 256 "$BUNDLE_TAR" | awk '{print $1}')
+    fi
+    if [ "$actual_sha" != "$BUNDLE_SHA256" ]; then
+        echo "  [LỖI] Checksum SHA256 của $BUNDLE_TAR không khớp (file hỏng hoặc tải dở)." >&2
+        echo "  Hãy xóa file này rồi chạy lại ./run.sh" >&2
+        exit 1
+    fi
+
+    echo "  -> Đang giải nén gói dữ liệu..."
+    tar -xzf "$BUNDLE_TAR"
+    echo "  -> Giải nén hoàn tất."
+else
+    echo "  -> Dữ liệu bàn giao đã sẵn sàng."
 fi
 
 # 4. Khởi động Docker Compose
