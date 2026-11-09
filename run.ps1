@@ -1,4 +1,4 @@
-<#
+﻿<#
 .SYNOPSIS
     Script khởi động toàn bộ hệ thống PM2.5 Hà Nội bằng 1-chạm (Docker Compose).
 .DESCRIPTION
@@ -95,6 +95,7 @@ while ($elapsed -lt $timeout) {
         }
     } catch {
         # Đang chờ container khởi động
+         = 
     }
     Write-Host -NoNewline "."
 }

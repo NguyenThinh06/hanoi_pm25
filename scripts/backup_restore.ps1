@@ -1,4 +1,4 @@
-<#
+﻿<#
 .SYNOPSIS
     Script sao lưu và phục hồi cơ sở dữ liệu PostgreSQL PM2.5 Hà Nội qua Docker (Gói 4).
 .EXAMPLE
