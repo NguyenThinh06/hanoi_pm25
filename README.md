@@ -58,6 +58,8 @@ git clone https://github.com/NguyenThinh06/hanoi_pm25.git
 cd hanoi_pm25
 
 # Bước 2: Chạy script 1-chạm (Windows)
+#   Lần chạy đầu, script tự tải gói dữ liệu (~86MB) từ GitHub Release v1.0.0,
+#   kiểm tra SHA256 và giải nén — không cần tải thủ công.
 .\run.ps1
 
 # (Nếu dùng Linux / macOS / WSL)

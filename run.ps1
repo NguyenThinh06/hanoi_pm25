@@ -5,7 +5,7 @@
     Tự động:
     1. Kiểm tra Docker Desktop đã bật hay chưa.
     2. Chuẩn bị file cấu hình .env.
-    3. Giải nén gói bàn giao Parquet nếu chưa có.
+    3. Tự động tải (GitHub Release) và giải nén gói dữ liệu bàn giao nếu chưa có.
     4. Khởi động 3 dịch vụ: Database PostGIS, API FastAPI, Frontend React.
     5. Tự động nạp dữ liệu vào Database bằng container importer.
     6. Tự động mở trình duyệt truy cập Dashboard http://localhost.
@@ -54,17 +54,49 @@ if (-not (Test-Path .env)) {
     Write-Host "  -> File .env đã tồn tại." -ForegroundColor Green
 }
 
-# 3. Kiểm tra gói dữ liệu bàn giao
+# 3. Kiểm tra / tự động tải gói dữ liệu bàn giao
 Write-Host "`n[3/5] Kiểm tra gói dữ liệu bàn giao (Parquet & Geometry)..." -ForegroundColor Yellow
+$bundleName   = "pm25-handover-2026-11-04.tar.gz"
+$bundleTar    = "handover_bundles/$bundleName"
+$bundleUrl    = "https://github.com/NguyenThinh06/hanoi_pm25/releases/download/v1.0.0/$bundleName"
+$bundleSha256 = "0013bae87171042c3822347ff0fc4509ea9da2d95108b41296adc0069dc2b8f0"
+
 if (-not (Test-Path "HANDOVER_MANIFEST.json")) {
-    $bundleTar = "handover_bundles/pm25-handover-2026-11-04.tar.gz"
-    if (Test-Path $bundleTar) {
-        Write-Host "  -> Đang tự động giải nén gói dữ liệu bàn giao ($bundleTar)..." -ForegroundColor White
-        tar -xzf $bundleTar
-        Write-Host "  -> Giải nén hoàn tất." -ForegroundColor Green
-    } else {
-        Write-Host "  [Cảnh báo] Không tìm thấy file $bundleTar. Hệ thống sẽ sử dụng dữ liệu có sẵn trong outputs/." -ForegroundColor Yellow
+    if (-not (Test-Path $bundleTar)) {
+        Write-Host "  -> Chưa có gói dữ liệu. Đang tự động tải từ GitHub Release (~86MB)..." -ForegroundColor White
+        Write-Host "     $bundleUrl" -ForegroundColor DarkGray
+        New-Item -ItemType Directory -Force -Path "handover_bundles" | Out-Null
+        try {
+            [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
+            $oldProgress = $ProgressPreference
+            $ProgressPreference = "SilentlyContinue"   # tăng tốc Invoke-WebRequest trên PowerShell 5.1
+            Invoke-WebRequest -Uri $bundleUrl -OutFile "$bundleTar.part" -UseBasicParsing
+            $ProgressPreference = $oldProgress
+            Move-Item -Force "$bundleTar.part" $bundleTar
+        } catch {
+            Remove-Item -Force -ErrorAction SilentlyContinue "$bundleTar.part"
+            Write-Host "  [LỖI] Không tải được gói dữ liệu: $($_.Exception.Message)" -ForegroundColor Red
+            Write-Host "  Vui lòng tải thủ công file $bundleName từ:" -ForegroundColor Yellow
+            Write-Host "    $bundleUrl" -ForegroundColor Cyan
+            Write-Host "  rồi đặt vào thư mục 'handover_bundles/' và chạy lại .\run.ps1" -ForegroundColor White
+            exit 1
+        }
     }
+
+    $actualSha = (Get-FileHash $bundleTar -Algorithm SHA256).Hash.ToLower()
+    if ($actualSha -ne $bundleSha256) {
+        Write-Host "  [LỖI] Checksum SHA256 của $bundleTar không khớp (file hỏng hoặc tải dở)." -ForegroundColor Red
+        Write-Host "  Hãy xóa file này rồi chạy lại .\run.ps1" -ForegroundColor White
+        exit 1
+    }
+
+    Write-Host "  -> Đang giải nén gói dữ liệu bàn giao ($bundleTar)..." -ForegroundColor White
+    tar -xzf $bundleTar
+    if ($LASTEXITCODE -ne 0 -or -not (Test-Path "HANDOVER_MANIFEST.json")) {
+        Write-Host "  [LỖI] Giải nén thất bại." -ForegroundColor Red
+        exit 1
+    }
+    Write-Host "  -> Giải nén hoàn tất." -ForegroundColor Green
 } else {
     Write-Host "  -> Dữ liệu bàn giao đã sẵn sàng." -ForegroundColor Green
 }
@@ -95,7 +127,7 @@ while ($elapsed -lt $timeout) {
         }
     } catch {
         # Đang chờ container khởi động
-         = 
+        Start-Sleep -Milliseconds 500
     }
     Write-Host -NoNewline "."
 }
