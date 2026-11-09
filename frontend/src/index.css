@@ -1,0 +1,6 @@
+﻿@import "tailwindcss";
+
+/* Nền xám để màu nền bản đồ không lẫn với thang màu PM2.5. */
+.leaflet-tile-pane {
+  filter: grayscale(1);
+}
