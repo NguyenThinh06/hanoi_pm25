@@ -6,13 +6,13 @@
 
 [![Release](https://img.shields.io/badge/Release-v1.0.0-blue.svg?style=for-the-badge&logo=git)](https://github.com/NguyenThinh06/hanoi_pm25/releases)
 [![Python 3.12](https://img.shields.io/badge/Python-3.12-3776AB.svg?style=for-the-badge&logo=python&logoColor=white)](https://www.python.org/)
-[![Docker](https://img.shields.io/badge/Docker-Compose_1--Touch-2496ED.svg?style=for-the-badge&logo=docker&logoColor=white)](docs/DEPLOYMENT.md)
-[![FastAPI](https://img.shields.io/badge/FastAPI-0.121+-009688.svg?style=for-the-badge&logo=fastapi&logoColor=white)](docs/BACKEND.md)
-[![PostGIS](https://img.shields.io/badge/PostGIS-16--3.4-336791.svg?style=for-the-badge&logo=postgresql&logoColor=white)](db/migrations)
+[![Docker](https://img.shields.io/badge/Docker-Compose_1--Touch-2496ED.svg?style=for-the-badge&logo=docker&logoColor=white)](archive/DEPLOYMENT.md)
+[![FastAPI](https://img.shields.io/badge/FastAPI-0.121+-009688.svg?style=for-the-badge&logo=fastapi&logoColor=white)](archive/BACKEND.md)
+[![PostGIS](https://img.shields.io/badge/PostGIS-16--3.4-336791.svg?style=for-the-badge&logo=postgresql&logoColor=white)](docs/schema.md)
 [![React](https://img.shields.io/badge/React_SPA-Leaflet_Canvas-61DAFB.svg?style=for-the-badge&logo=react&logoColor=black)](frontend/README.md)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=for-the-badge)](LICENSE)
 
-[🌐 Báo Cáo Khoa Học (12 Phần)](docs/report.md) • [🎯 Định Hướng Nghiệp Vụ](docs/business_case.md) • [🚀 Hướng Dẫn Chạy 1-Chạm](docs/DEPLOYMENT.md) • [📚 Thư Viện Tài Liệu](docs/README.md)
+[🎯 Định Hướng Nghiệp Vụ](docs/business_case.md) • [🗄️ Cấu Trúc Dữ Liệu](docs/schema.md) • [🚀 Triển Khai Docker](archive/DEPLOYMENT.md) • [📚 Thư Viện Tài Liệu](docs/README.md) • [📄 Báo Cáo Kỹ Thuật](archive/report.md)
 
 </div>
 
@@ -137,7 +137,7 @@ flowchart TD
 
 ## 🔬 Mô Hình Học Máy & Kết Quả Thực Nghiệm
 
-> 📌 Xem báo cáo đầy đủ tại [docs/report.md](docs/report.md) và [docs/model_report.md](docs/model_report.md)
+> 📌 Xem báo cáo đầy đủ tại [archive/report.md](archive/report.md) và [archive/model_report.md](archive/model_report.md)
 
 ### 1. Hai mô hình cơ sở:
 - **Baseline 1 (`XGBoost: Lịch + Tọa độ + Khí tượng` - 27 biến):** Dựa trên tọa độ không gian `EPSG:3405`, ngày trong năm, chu kỳ mùa và các biến khí tượng ERA5 (nhiệt độ, ẩm, mưa, gió, độ cao lớp biên BLH).
@@ -179,14 +179,10 @@ pm25_hanoi/
 │   └── marts/              # Mart đặc trưng 3.610 ô & mart huấn luyện trạm (7.290 mẫu)
 ├── db/
 │   └── migrations/         # DDL SQL tự động khởi tạo bảng không gian trong PostgreSQL/PostGIS
-├── docs/                   # Thư viện tài liệu kỹ thuật & báo cáo (Xem docs/README.md)
-│   ├── report.md           # 📄 Báo cáo Khoa học Dữ liệu toàn diện (12 phần chuẩn)
-│   ├── business_case.md    # 📄 Định vị bài toán & 4 câu hỏi nghiên cứu cốt lõi
-│   ├── DEPLOYMENT.md       # 🚀 Sổ tay triển khai 1-chạm Docker & Vận hành
-│   ├── HANDOVER.md         # 📜 Hợp đồng dữ liệu & API Contract v1 chuẩn hóa
-│   ├── BACKEND.md          # ⚡ Hướng dẫn kỹ thuật FastAPI backend & RAM cache
-│   ├── model_report.md     # 🔬 Báo cáo chuyên sâu 3 phương pháp đánh giá mô hình
-│   └── schema.md           # 🗄️ Đặc tả chi tiết lược đồ bảng dữ liệu Lakehouse
+├── docs/                   # Thư viện tài liệu cốt lõi (Xem docs/README.md)
+│   ├── business_case.md    # 📄 Định vị bài toán, 4 câu hỏi nghiên cứu & ranh giới khoa học
+│   ├── schema.md           # 🗄️ Đặc tả chi tiết lược đồ bảng dữ liệu Lakehouse & Marts
+│   └── README.md           # 📖 Hướng dẫn & Chỉ mục tài liệu cốt lõi
 ├── frontend/               # Mã nguồn React SPA Dashboard (Vite, Leaflet Canvas, Tailwind)
 ├── outputs/
 │   ├── evaluation/         # Metrics JSON và parquet kết quả của 3 phương pháp đánh giá
@@ -206,18 +202,17 @@ pm25_hanoi/
 
 ## 📚 Hệ Thống Tài Liệu Kèm Theo
 
-Dự án cung cấp đầy đủ hệ sinh thái tài liệu được phân loại khoa học tại [docs/README.md](docs/README.md):
+Dự án cung cấp bộ tài liệu được tinh gọn tập trung vào hai trụ cột chính tại [docs/README.md](docs/README.md):
 
-1. **Báo cáo Khoa học & Nghiên cứu Nghiệp vụ:**
-   - [docs/report.md](docs/report.md): Báo cáo Khoa học Dữ liệu đầy đủ 12 phần theo chuẩn mực học thuật.
-   - [docs/business_case.md](docs/business_case.md): Định vị nghiệp vụ, giải thích mâu thuẫn số liệu và 4 câu hỏi nghiên cứu.
-2. **Kỹ thuật Mô hình & Kiến trúc Dữ liệu:**
-   - [docs/model_report.md](docs/model_report.md): Phân tích chi tiết 3 phương pháp kiểm thử chéo và kiểm định thống kê.
-   - [docs/schema.md](docs/schema.md): Đặc tả Star Schema và định dạng các trường dữ liệu.
-3. **Triển khai & Vận hành Phần mềm:**
-   - [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md): Hướng dẫn triển khai Docker Compose, quy trình đối soát 3 điểm và sao lưu cơ sở dữ liệu.
-   - [docs/HANDOVER.md](docs/HANDOVER.md): Đặc tả 6 REST API endpoints và hợp đồng dữ liệu giao diện.
-   - [docs/BACKEND.md](docs/BACKEND.md): Tài liệu kỹ thuật Backend FastAPI, cấu hình CORS và RAM cache.
+1. **Tài liệu cốt lõi:**
+   - [docs/business_case.md](docs/business_case.md): Định vị nghiệp vụ, làm rõ khoảng trống không gian 30 vs 3.580 ô lưới, ranh giới khoa học minh bạch và 4 câu hỏi nghiên cứu thực nghiệm.
+   - [docs/schema.md](docs/schema.md): Đặc tả Data Lakehouse, Star Schema (`dim_*`, `fct_*`) và các Data Mart huấn luyện/dự đoán.
+2. **Kho lưu trữ tài liệu kỹ thuật chi tiết ([archive/](archive/README.md)):**
+   - [archive/HANDOVER.md](archive/HANDOVER.md): Đặc tả 6 REST API endpoints và hợp đồng dữ liệu giao diện.
+   - [archive/DEPLOYMENT.md](archive/DEPLOYMENT.md): Sổ tay triển khai Docker Compose chi tiết, đối soát 3 điểm và sao lưu DB.
+   - [archive/BACKEND.md](archive/BACKEND.md): Tài liệu kỹ thuật FastAPI backend, kiến trúc RAM caching và kiểm thử.
+   - [archive/report.md](archive/report.md): Báo cáo Khoa học Dữ liệu 12 phần đầy đủ theo chu trình chuẩn.
+   - [archive/model_report.md](archive/model_report.md): Báo cáo phân tích thực nghiệm chuyên sâu 3 phương pháp kiểm thử chéo.
 
 ---
 

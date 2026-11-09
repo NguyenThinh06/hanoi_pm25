@@ -32,6 +32,11 @@ outputs/
 /HANDOVER_MANIFEST.json
 archive/*
 !archive/README.md
+!archive/HANDOVER.md
+!archive/DEPLOYMENT.md
+!archive/BACKEND.md
+!archive/report.md
+!archive/model_report.md
 *.parquet
 *.tmp*
 
