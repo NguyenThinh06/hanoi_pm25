@@ -38,3 +38,15 @@ jobs:
 
       - name: Run unit tests
         run: python run.py test
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Test & build frontend
+        working-directory: frontend
+        run: |
+          npm ci
+          npm test
+          npm run build

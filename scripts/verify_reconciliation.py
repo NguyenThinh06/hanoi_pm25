@@ -18,9 +18,7 @@ import os
 import sys
 import urllib.parse
 import urllib.request
-from datetime import date
 from pathlib import Path
-from typing import Any
 
 import duckdb
 from dotenv import load_dotenv
@@ -191,14 +189,22 @@ def run_reconciliation(api_url: str, db_url: str | None) -> bool:
         )
 
     # Hiển thị bảng tổng hợp
+    header = (
+        f"{'STT':<4} | {'Mã ô':<22} | {'Ngày':<10} | {'Model':<10} | "
+        f"{'Parquet':<10} | {'Postgres':<10} | {'API':<10} | {'Kết quả'}"
+    )
     print("\n" + "=" * 95)
-    print(f"{'STT':<4} | {'Mã ô':<22} | {'Ngày':<10} | {'Model':<10} | {'Parquet':<10} | {'Postgres':<10} | {'API':<10} | {'Kết quả'}")
+    print(header)
     print("-" * 95)
     for r in results:
         p_str = f"{r['parquet']:.4f}" if r["parquet"] is not None else "N/A"
         db_str = f"{r['db']:.4f}" if r["db"] is not None else "N/A"
         api_str = f"{r['api']:.4f}" if r["api"] is not None else "N/A"
-        print(f"{r['stt']:<4} | {r['grid_id']:<22} | {r['date']:<10} | {r['model']:<10} | {p_str:<10} | {db_str:<10} | {api_str:<10} | {r['status']}")
+        row = (
+            f"{r['stt']:<4} | {r['grid_id']:<22} | {r['date']:<10} | {r['model']:<10} | "
+            f"{p_str:<10} | {db_str:<10} | {api_str:<10} | {r['status']}"
+        )
+        print(row)
     print("=" * 95 + "\n")
 
     if all_passed:

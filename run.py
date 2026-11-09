@@ -256,7 +256,7 @@ def main() -> None:
         )
 
     elif args.cmd == "lint":
-        cmd = [py, "-m", "ruff", "check", "src", "tests", "run.py"]
+        cmd = [py, "-m", "ruff", "check", "src", "tests", "scripts", "run.py"]
         if args.fix:
             cmd.append("--fix")
         _exec(cmd)

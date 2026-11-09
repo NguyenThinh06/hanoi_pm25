@@ -1,5 +1,20 @@
 # Lưu trữ Lịch sử (Archive) — HANOI_PM25
 
+## Đợt lưu trữ tài liệu trước bàn giao prediction toàn lưới (04/11/2026)
+
+`archive/docs_before_prediction_handover/` (bản lưu cục bộ trên máy, nằm trong `.gitignore` theo quy tắc chung của thư mục `archive/*`) lưu giữ nguyên vẹn toàn bộ các tài liệu nghiên cứu, EDA, schema chi tiết và báo cáo đánh giá mô hình trước khi hợp nhất thành một tài liệu bàn giao duy nhất:
+- `business_case.md`: Khung giả thuyết và bài toán kinh doanh.
+- `schema.md`: Đặc tả chi tiết các bảng trong Data Lakehouse.
+- `model_report.md`: Báo cáo chi tiết 3 phương pháp đánh giá mô hình.
+- `eda_temporal_split.md`: Báo cáo EDA phân chia tập theo thời gian.
+- `roadmap.md`: Lộ trình ban đầu của dự án.
+- `DATA_DELIVERY.md`: Hướng dẫn nhận dữ liệu cũ.
+- `HANDOVER_COMPLETION.md`: Biên bản hoàn thành chuẩn bị dữ liệu cũ.
+- `handover_artifacts.json`: Manifest cũ của các gói artifact.
+- `GROUP_HANDOVER.md`: Bản thảo bàn giao nội bộ nhóm.
+
+---
+
 ## Bản sao trước bàn giao data/model ngày 04/11/2026
 
 `archive/2026-11-04_pre_handover/` giữ bản sao registry, tests và tài liệu trước khi tách đồng bộ PostgreSQL. Các file SQL nháp vẫn ở `sql/` trên máy bàn giao. Cả hai phần này không nằm trong commit/gói data-model; không bị xóa và không phải dependency của code bàn giao. Chỉ README archive được đưa vào Git.
