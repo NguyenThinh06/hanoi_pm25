@@ -21,6 +21,24 @@ services:
     networks:
       - hanoi_pm25_net
 
+  importer:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: hanoi_pm25_importer
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-hanoi_pm25}:${POSTGRES_PASSWORD:-hanoi_pm25_secret}@db:5432/${POSTGRES_DB:-hanoi_pm25}
+    volumes:
+      - ./:/workspace:ro
+    working_dir: /workspace
+    depends_on:
+      db:
+        condition: service_healthy
+    command: ["python", "scripts/import.py"]
+    restart: "no"
+    networks:
+      - hanoi_pm25_net
+
   api:
     build:
       context: .
@@ -36,6 +54,8 @@ services:
     depends_on:
       db:
         condition: service_healthy
+      importer:
+        condition: service_completed_successfully
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health').read()"]
       interval: 10s

@@ -24,6 +24,11 @@ outputs/
 # Local-only deployment drafts; not part of the data/model handover.
 /sql/
 /handover_bundles/
+# Handover bundle extracted directories
+/geometry/
+/metadata/
+/predictions/
+/stations/
 /HANDOVER_MANIFEST.json
 archive/*
 !archive/README.md
