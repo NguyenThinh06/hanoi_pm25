@@ -1,6 +1,6 @@
 # Frontend Dashboard (Gói 3)
 
-React + Vite + Tailwind + Leaflet, gọi 6 endpoint dữ liệu của Hợp đồng API v1 (`docs/HANDOVER.md` mục 5).
+React + Vite + Tailwind + Leaflet, gọi 6 endpoint dữ liệu của Hợp đồng API v1 (`archive/HANDOVER.md` mục 5).
 
 ## Cấu trúc thư mục
 

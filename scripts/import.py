@@ -556,11 +556,16 @@ def main() -> None:
     )
     parser.add_argument("--migrate-only", action="store_true", help="Chỉ áp dụng các migration chưa chạy.")
     args = parser.parse_args()
-    if args.smoke_month and not re.fullmatch(r"\d{4}-(0[1-9]|1[0-2])", args.smoke_month):
-        parser.error("--smoke-month phải theo định dạng YYYY-MM, ví dụ 2024-01")
+    smoke_month = args.smoke_month or os.getenv("IMPORT_SMOKE_MONTH")
+    if smoke_month and smoke_month.strip().lower() in ("all", "none", "false", ""):
+        smoke_month = None
+    if smoke_month and not re.fullmatch(r"\d{4}-(0[1-9]|1[0-2])", smoke_month):
+        parser.error(
+            f"--smoke-month / IMPORT_SMOKE_MONTH phải theo định dạng YYYY-MM, ví dụ 2024-01 (nhận được: {smoke_month})"
+        )
     try:
         configure_bundle(args.bundle_dir or ROOT)
-        run_import(args.smoke_month, args.migrate_only)
+        run_import(smoke_month, args.migrate_only)
     except (ImportErrorWithContext, OSError, psycopg.Error, ValueError, KeyError) as exc:
         print(f"[ERROR] {exc}", file=sys.stderr)
         raise SystemExit(1) from exc

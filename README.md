@@ -1,123 +1,251 @@
-# HANOI_PM25 — Spatial Data Lakehouse Pipeline (01/2021 – 09/2026)
+<div align="center">
 
-Backend FastAPI Gói 2: xem [hướng dẫn chạy, API Contract v1 và kiểm thử](docs/BACKEND.md).
+# 🌫️ HANOI_PM25
+### Hệ Thống Ước Tính Hồi Cứu & Trực Quan Hóa Bụi Mịn $\text{PM}_{2.5}$ Lưới 1 km tại Hà Nội (2021–2026)
+**A Production-grade Spatial Data Science & Full-stack GIS Lakehouse System**
 
-Pipeline thu thập, chuẩn hóa và kết hợp dữ liệu không-thời gian để **ước tính hồi cứu nồng độ PM2.5 trung bình ngày** trên lưới **1 km × 1 km (EPSG:3405)** tại Hà Nội, trong giai đoạn cấu hình **01/01/2021 – 30/09/2026** (múi giờ `Asia/Ho_Chi_Minh`, UTC+7). Nhãn huấn luyện là số đo trạm OpenAQ; đặc trưng gồm lịch, tọa độ, khí tượng và vệ tinh. Kết quả là ước tính hồi cứu của mô hình, không phải số đo tại từng ô hay dự báo ngày tiếp theo.
+[![Release](https://img.shields.io/badge/Release-v1.0.0-blue.svg?style=for-the-badge&logo=git)](https://github.com/NguyenThinh06/hanoi_pm25/releases)
+[![Python 3.12](https://img.shields.io/badge/Python-3.12-3776AB.svg?style=for-the-badge&logo=python&logoColor=white)](https://www.python.org/)
+[![Docker](https://img.shields.io/badge/Docker-Compose_1--Touch-2496ED.svg?style=for-the-badge&logo=docker&logoColor=white)](archive/DEPLOYMENT.md)
+[![FastAPI](https://img.shields.io/badge/FastAPI-0.121+-009688.svg?style=for-the-badge&logo=fastapi&logoColor=white)](archive/BACKEND.md)
+[![PostGIS](https://img.shields.io/badge/PostGIS-16--3.4-336791.svg?style=for-the-badge&logo=postgresql&logoColor=white)](docs/schema.md)
+[![React](https://img.shields.io/badge/React_SPA-Leaflet_Canvas-61DAFB.svg?style=for-the-badge&logo=react&logoColor=black)](frontend/README.md)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=for-the-badge)](LICENSE)
 
-## Bài toán và trạng thái hiện tại
+[🎯 Định Hướng Nghiệp Vụ](docs/business_case.md) • [🗄️ Cấu Trúc Dữ Liệu](docs/schema.md) • [🚀 Triển Khai Docker](archive/DEPLOYMENT.md) • [📚 Thư Viện Tài Liệu](docs/README.md) • [📄 Báo Cáo Kỹ Thuật](archive/report.md) • [📝 Changelog](CHANGELOG.md)
 
-- **Mục tiêu**: Ước tính phân bố PM2.5 lịch sử trên toàn bộ `3.610` ô lưới 1 km, đặc biệt tại `3.580` ô lưới không có trạm quan trắc (`99,17%`), và cho phép đối chiếu với quan trắc. Xem [schema](docs/schema.md) và [báo cáo mô hình](docs/model_report.md).
-- **Quy trình đánh giá chuẩn hóa (3 phương pháp trên `7.290` dòng hợp lệ, `32` trạm, `30` ô lưới)**:
-  1. **Spatial GroupKFold (`spatial_groupkfold` — Đánh giá chính)**: `GroupKFold(n_splits=5)` theo `grid_id`. **Baseline 2 (`OpenAQ + Meteo + Satellite`) thắng nhất quán** trên cả metric gộp (`MAE = 11,0451` so với `11,5955` µg/m³, `RMSE = 15,9541` so với `16,7911` µg/m³, `R² = 0,5894` so với `0,5452`), Macro-MAE theo ô (`10,6515` so với `11,1494` µg/m³), `4/5` fold và `17/30` ô lưới.
-  2. **Random KFold (`random_kfold` — Mốc tham chiếu)**: `KFold(n_splits=5, shuffle=True, random_state=42)` theo dòng (`MAE = 6,6247` so với `6,7710` µg/m³, `R² = 0,8382` so với `0,8293`), minh họa mức độ lạc quan khi chia ngẫu nhiên theo dòng có rò rỉ không gian – thời gian.
-  3. **Temporal Split (`temporal_split` — Đánh giá bổ sung theo thời gian)**: Train trước `2026-01-01` (`6.280` dòng), validation năm `2026` (`1.010` dòng, `6` trạm). Baseline 2 thắng nhẹ trên metric gộp (`MAE = 11,0847` so với `11,1443` µg/m³) và thắng rõ khi có AOD (`MAE = 17,1562` so với `19,5302` µg/m³), trong khi Baseline 1 nhỉnh nhẹ ở nhóm mất ảnh AOD (`MAE = 10,4814` so với `10,6047` µg/m³).
-- **Huấn luyện và lưu trữ mô hình cuối cùng**: Cả hai mô hình (`baseline1` và `baseline2`) được huấn luyện lại trên `100%` dữ liệu hợp lệ (`7.290` dòng, `seed = 42`), lưu định dạng chuẩn XGBoost JSON (`outputs/models/{baseline1,baseline2}/model.json`) kèm kiểm chứng nạp lại trên tập mẫu (`25` dòng) mà không cần chạy lại suy luận 7,57 triệu ô-ngày.
-- **Metadata cục bộ**: Kết quả thực nghiệm, model và artifact được đăng ký bằng JSON tại `outputs/registry/`. Bản bàn giao chỉ hoàn thành data/model; PostgreSQL, Docker, API và dashboard là việc tiếp theo trong [HANDOVER](docs/HANDOVER.md).
-- **Nhận dữ liệu và model**: xem [hướng dẫn bàn giao](docs/DATA_DELIVERY.md). Data/model cần tải qua gói artifact riêng.
+</div>
 
 ---
 
-## 1. Cấu trúc thư mục
+## 📖 Mục Lục
+
+- [🌟 Điểm Nổi Bật Của Hệ Thống](#-điểm-nổi-bật-của-hệ-thống)
+- [⚡ Khởi Động Nhanh 1-Chạm (Quick Start)](#-khởi-động-nhanh-1-chạm-quick-start)
+- [🗺️ Bài Toán Nghiệp Vụ & Ranh Giới Khoa Học](#️-bài-toán-nghiệp-vụ--ranh-giới-khoa-học)
+- [🏗️ Kiến Trúc Hệ Thống (Architecture)](#️-kiến-trúc-hệ-thống-architecture)
+- [🔬 Mô Hình Học Máy & Kết Quả Thực Nghiệm](#-mô-hình-học-máy--kết-quả-thực-nghiệm)
+- [🌐 Giao Diện Bản Đồ & Trực Quan Hóa](#-giao-diện-bản-đồ--trực-quan-hóa)
+- [📁 Cấu Trúc Thư Mục Chuẩn](#-cấu-trúc-thư-mục-chuẩn)
+- [📚 Hệ Thống Tài Liệu Kèm Theo](#-hệ-thống-tài-liệu-kèm-theo)
+- [🛠️ Công Nghệ Sử Dụng (Tech Stack)](#️-công-nghệ-sử-dụng-tech-stack)
+
+---
+
+## 🌟 Điểm Nổi Bật Của Hệ Thống
+
+- **🛰️ Dữ Liệu Đa Nguồn Toàn Diện:** Tích hợp 3 tầng dữ liệu độc lập: **712.870** bản ghi giờ từ trạm mặt đất (OpenAQ v3), dữ liệu khí tượng tái phân tích ECMWF ERA5 phủ kín $100\%$ không-thời gian, và dữ liệu viễn thám vệ tinh (MODIS MAIAC AOD, Sentinel-5P, Suomi-NPP VIIRS) qua Google Earth Engine.
+- **🗺️ Độ Phủ Không Gian Rộng Lớn:** Chia toàn bộ thành phố Hà Nội ($\approx 3.359\text{ km}^2$) thành **3.610 ô lưới $1\text{ km} \times 1\text{ km}$** chuẩn tọa độ `EPSG:3405` / `EPSG:4326`, giải quyết khoảng trống dữ liệu tại $99,17\%$ diện tích không có trạm quan trắc mặt đất.
+- **📈 15.15 Triệu Bản Ghi Ước Tính:** Đã sinh trọn vẹn 15.154.780 bản ghi ước tính nồng độ bụi $\text{PM}_{2.5}$ trung bình ngày trong suốt **2.099 ngày** (01/01/2021 – 30/09/2026) cho 2 mô hình cơ sở.
+- **🔬 Phương Pháp Luận Khoa Học Đánh Giá Trung Thực:** Áp dụng **`Spatial GroupKFold`** cô lập ô trạm kiểm thử nhằm ngăn chặn hiện tượng rò rỉ dữ liệu không gian (*Spatial Data Leakage*), phản ánh đúng năng lực ngoại suy sang nơi không có trạm.
+- **⚡ Triển Khai 1-Chạm (One-Touch Startup):** Khởi động toàn bộ cụm 4 dịch vụ (Database PostGIS, Importer, FastAPI Backend, React Frontend) chỉ bằng **1 lệnh duy nhất** (`.\run.ps1` hoặc `docker compose up -d`).
+- **🎯 Đối Soát 3 Điểm Chuẩn Xác:** Kèm script tự động đối soát giá trị nồng độ từ file gốc `Parquet` $\rightarrow$ `PostgreSQL` $\rightarrow$ `REST API`, đảm bảo tính toàn vẹn dữ liệu với sai lệch bằng $0$ tuyệt đối.
+
+---
+
+## ⚡ Khởi Động Nhanh 1-Chạm (Quick Start)
+
+Hệ thống được đóng gói hoàn chỉnh bằng Docker Compose, sẵn sàng chạy ngay trên Windows, Linux và macOS:
+
+### 1. Yêu cầu tiên quyết
+- Đã cài đặt [Docker Desktop](https://www.docker.com/products/docker-desktop/) và đã bật ứng dụng.
+- Đã cài đặt Git.
+
+### 2. Chạy 1-chạm (Khuyến nghị 👍)
+```powershell
+# Bước 1: Clone kho mã nguồn
+git clone https://github.com/NguyenThinh06/hanoi_pm25.git
+cd hanoi_pm25
+
+# Bước 2: Chạy script 1-chạm (Windows)
+.\run.ps1
+
+# (Nếu dùng Linux / macOS / WSL)
+chmod +x run.sh && ./run.sh
+```
+
+*Script sẽ tự động tạo file `.env`, khởi động cụm container Docker, nạp dữ liệu mẫu và **tự động mở trình duyệt web** tại `http://localhost`.*
+
+### 3. Các cổng truy cập dịch vụ:
+
+| Dịch vụ | Đường dẫn truy cập | Mô tả chức năng |
+| :--- | :--- | :--- |
+| **🌐 Web Dashboard** | **[http://localhost](http://localhost)** | Xem bản đồ nhiệt 3.610 ô lưới, đổi ngày/model, xem biểu đồ trạm |
+| **📚 Tài liệu API Swagger** | **[http://localhost:8000/docs](http://localhost:8000/docs)** | Trực tiếp kiểm thử 6 REST API endpoints của FastAPI |
+| **💚 Kiểm tra sức khỏe** | **[http://localhost/health](http://localhost/health)** | Kiểm tra kết nối cơ sở dữ liệu PostGIS và trạng thái API |
+
+---
+
+## 🗺️ Bài Toán Nghiệp Vụ & Ranh Giới Khoa Học
+
+> 📌 Xem chi tiết tại [docs/business_case.md](docs/business_case.md)
+
+### Vấn đề thực tế
+Hà Nội có diện tích lớn nhưng chỉ có **32 trạm đo đạt chuẩn QC** phân bố trên **30 ô lưới**, tập trung ở khu vực nội thành. Hơn **3.580 ô lưới ($\approx 99,17\%$)** ở ngoại thành, vùng đệm sinh thái và khu công nghiệp hoàn toàn không có dữ liệu quan trắc thường xuyên.
+
+```
+[Mạng lưới quan trắc mặt đất]        32 trạm / 30 ô lưới (0.83% diện tích)
+[Khoảng trống không gian]           3.580 ô lưới không có trạm (99.17% diện tích)
+```
+
+### Ranh giới khoa học minh bạch (3 Không)
+1. ❌ **Không phải dự báo tương lai (No Forecasting):** Đây là mô hình **ước tính hồi cứu** (retrospective estimation) cho từng ngày trong quá khứ dựa trên dữ liệu khí quyển đã ghi nhận; không dự báo nồng độ ngày mai.
+2. ❌ **Không suy diễn nguyên nhân ô nhiễm:** Đồ án không có dữ liệu kiểm kê nguồn thải (emission inventory), không quy trách nhiệm phát thải cho bất kỳ ngành nghề hay khu vực cụ thể nào.
+3. ❌ **Không phải chẩn đoán y tế:** Kết quả nhằm phục vụ nghiên cứu khoa học dữ liệu và trực quan hóa không gian, không đưa ra khuyến cáo bệnh lý cá nhân.
+
+---
+
+## 🏗️ Kiến Trúc Hệ Thống (Architecture)
+
+Hệ thống được thiết kế theo mô hình **End-to-End Data Lakehouse & Serving Platform**:
+
+```mermaid
+flowchart TD
+    subgraph Sources["1. Nguồn Dữ Liệu Đa Nguồn (2021–2026)"]
+        OpenAQ["OpenAQ v3 API\n(712K bản ghi giờ, 43 trạm)"]
+        ERA5["ECMWF ERA5-Land & BLH\n(100% không khuyết, 3.610 ô)"]
+        Sat["MODIS MAIAC, Sentinel-5P, VIIRS\n(GEE Satellite Imageries)"]
+    end
+
+    subgraph Lakehouse["2. Data Lakehouse Đa Tầng (DuckDB & Parquet)"]
+        Staging["Staging Layer\n(Chuẩn hóa UTC+7, Lọc QC >= 18h)"]
+        Core["Core Star Schema\n(dim_grid, dim_date, dim_station, fct_*)"]
+        Marts["Marts Layer\n(mart_grid_daily_features, mart_training: 7.290 mẫu)"]
+        Staging --> Core --> Marts
+    end
+
+    subgraph Modeling["3. Mô Hình Hóa & Đánh Giá Trung Thực"]
+        B1["Baseline 1 (27 đặc trưng)\nLịch + Tọa độ + Khí tượng ERA5"]
+        B2["Baseline 2 (34 đặc trưng)\nBaseline 1 + 7 biến Viễn thám Vệ tinh"]
+        Eval["Đánh giá Đa chiều\nSpatial GroupKFold | Temporal Split | Random KFold"]
+        Marts --> B1 & B2 --> Eval
+    end
+
+    subgraph Serving["4. Tầng Dịch Vụ & Ứng Dụng (Docker Compose)"]
+        Inference["Full-grid Batch Inference\n(15.154.780 bản ghi Parquet)"]
+        PostGIS[("PostgreSQL 16 + PostGIS 3.4\n(grids, predictions, stations)")]
+        FastAPI["FastAPI REST API Backend\n(Port 8000, In-Memory RAM Cache)"]
+        ReactUI["React SPA Dashboard\n(Nginx Port 80, Leaflet 3.610 Canvas Polygons)"]
+        
+        Eval --> Inference --> PostGIS --> FastAPI --> ReactUI
+    end
+
+    OpenAQ & ERA5 & Sat --> Staging
+```
+
+---
+
+## 🔬 Mô Hình Học Máy & Kết Quả Thực Nghiệm
+
+> 📌 Xem báo cáo đầy đủ tại [archive/report.md](archive/report.md) và [archive/model_report.md](archive/model_report.md)
+
+### 1. Hai mô hình cơ sở:
+- **Baseline 1 (`XGBoost: Lịch + Tọa độ + Khí tượng` - 27 biến):** Dựa trên tọa độ không gian `EPSG:3405`, ngày trong năm, chu kỳ mùa và các biến khí tượng ERA5 (nhiệt độ, ẩm, mưa, gió, độ cao lớp biên BLH).
+- **Baseline 2 (`XGBoost: Lịch + Tọa độ + Khí tượng + Vệ tinh` - 34 biến):** Bổ sung 7 biến viễn thám: Độ dày quang học sol khí AOD $0,47\ \mu\text{m}$ (MODIS), nồng độ cột đối lưu $\text{NO}_2, \text{CO}, \text{O}_3, \text{SO}_2$ (Sentinel-5P) và bức xạ ánh sáng ban đêm (VIIRS).
+
+### 2. Kết quả kiểm nghiệm thực tế đã xác minh:
+
+| Phương pháp đánh giá | Mô hình | MAE ($\mu\text{g/m}^3$) | RMSE ($\mu\text{g/m}^3$) | $R^2$ | Ý nghĩa khoa học |
+| :--- | :--- | :---: | :---: | :---: | :--- |
+| **Spatial GroupKFold** *(Chính - 5 Fold)* | Baseline 1 (Khí tượng) | 11,60 | 16,79 | 0,5452 | Chuẩn mực đánh giá ngoại suy sang ô không có trạm. |
+| | **Baseline 2 (Khí tượng + Vệ tinh)** | **11,05** | **15,95** | **0,5894** | **Vệ tinh giúp giảm $4,7\%$ MAE, tăng $4,42\%$ $R^2$; thắng ở 4/5 fold.** |
+| **Temporal Split** *(Bổ sung năm 2026)* | Baseline 1 | 11,14 | 16,14 | 0,5284 | Train 2021–2025 (6.280 mẫu), Test 2026 (1.010 mẫu). |
+| | **Baseline 2** | **11,08** | **16,00** | **0,5367** | Thắng vượt trội khi có AOD ($17,16$ vs $19,53\ \mu\text{g/m}^3$). |
+| **Random KFold** *(Tham chiếu dòng)* | Baseline 1 / Baseline 2 | 6,62 / 6,77 | 10,37 / 10,65 | 0,838 / 0,829 | Bị rò rỉ không gian; điểm số ảo không phản ánh năng lực ngoại suy. |
+
+---
+
+## 🌐 Giao Diện Bản Đồ & Trực Quan Hóa
+
+Dashboard được xây dựng chuyên biệt để xử lý dữ liệu không gian lớn mà không gây quá tải trình duyệt:
+
+- **Leaflet HTML5 Canvas:** Render mượt mà **3.610 polygon ô lưới** trong một khung hình duy nhất, cho phép lia chuột, zoom và chọn ô với tốc độ 60 FPS.
+- **Bộ lọc động:** Lựa chọn linh hoạt ngày bất kỳ trong giai đoạn 2021–2026, chuyển đổi trực tiếp giữa Baseline 1 và Baseline 2 để so sánh độ chênh lệch nồng độ.
+- **Lớp trạm quan trắc mặt đất:** Đánh dấu vị trí các trạm quan trắc thực tế, hiển thị số đo thực tế và cờ kiểm soát chất lượng (QC) để đối chiếu trực tiếp với ước tính của mô hình.
+- **Biểu đồ chuỗi thời gian:** Click vào bất kỳ ô lưới nào trên bản đồ để xem biểu đồ biến thiên nồng độ trong suốt một năm.
+
+---
+
+## 📁 Cấu Trúc Thư Mục Chuẩn
 
 ```text
 pm25_hanoi/
-├── archive/                # Lưu trữ các script và kết quả thử nghiệm trung gian cũ (kèm archive/README.md)
+├── archive/                # Lưu trữ các bản thảo nháp cũ và script trung gian
 ├── data/
-│   ├── reference/          # Ranh giới hành chính Hà Nội (hanoi_boundary.geojson)
-│   ├── raw/                # Dữ liệu gốc từ OpenAQ v3 & Google Earth Engine
-│   ├── staging/            # Dữ liệu đã chuẩn hóa kiểu, đơn vị và gắn cờ QC
-│   ├── core/               # Star Schema: 3 bảng chiều (dim_*) + 3 bảng sự kiện (fct_*)
-│   └── marts/              # Bảng đặc trưng toàn lưới & bảng huấn luyện cấp trạm
-├── docs/
-│   ├── schema.md           # Đặc tả chi tiết kiến trúc, bảng và cột dữ liệu
-│   ├── business_case.md    # Business Case & khung 6 giả thuyết nghiên cứu (H1 - H6)
-│   ├── roadmap.md          # Hướng phát triển end-to-end, các hạng mục dự kiến
-│   ├── eda_temporal_split.md # EDA phục vụ thiết kế chia tập theo thời gian
-│   └── model_report.md     # Báo cáo đánh giá 3 phương pháp & mô hình cuối cùng
-├── notebooks/
-│   ├── 01_raw_and_initial_eda.ipynb     # EDA ban đầu trên dữ liệu thô & ra quyết định thiết kế/chọn biến
-│   └── 02_hypothesis_testing_eda.ipynb  # EDA kiểm định thống kê cho từng giả thuyết (H1 - H4)
+│   ├── reference/          # Ranh giới hành chính chuẩn Hà Nội (hanoi_boundary.geojson)
+│   ├── raw/                # Dữ liệu gốc tải về từ OpenAQ v3 & Google Earth Engine
+│   ├── staging/            # Dữ liệu đã chuẩn hóa múi giờ UTC+7 và gắn cờ QC
+│   ├── core/               # Bảng chiều (dim_grid, dim_date, dim_station) & sự kiện (fct_*)
+│   └── marts/              # Mart đặc trưng 3.610 ô & mart huấn luyện trạm (7.290 mẫu)
+├── db/
+│   └── migrations/         # DDL SQL tự động khởi tạo bảng không gian trong PostgreSQL/PostGIS
+├── docs/                   # Thư viện tài liệu cốt lõi (Xem docs/README.md)
+│   ├── business_case.md    # 📄 Định vị bài toán, 4 câu hỏi nghiên cứu & ranh giới khoa học
+│   ├── schema.md           # 🗄️ Đặc tả chi tiết lược đồ bảng dữ liệu Lakehouse & Marts
+│   └── README.md           # 📖 Hướng dẫn & Chỉ mục tài liệu cốt lõi
+├── frontend/               # Mã nguồn React SPA Dashboard (Vite, Leaflet Canvas, Tailwind)
 ├── outputs/
-│   ├── evaluation/
-│   │   ├── spatial_groupkfold/          # Đánh giá chính: metrics.json, predictions.parquet, fold_assignments.parquet
-│   │   ├── random_kfold/                # Mốc tham chiếu: metrics.json, predictions.parquet, fold_assignments.parquet
-│   │   └── temporal_split/              # Đánh giá bổ sung 2026: metrics.json, predictions.parquet, split_assignments.parquet
-│   ├── models/
-│   │   ├── baseline1/                   # model.json, metadata.json, config.yaml, sample_verification_predictions.parquet
-│   │   └── baseline2/                   # model.json, metadata.json, config.yaml, sample_verification_predictions.parquet
-│   └── registry/                        # Sổ đăng ký thực nghiệm & model (evaluation_runs, fold_metrics, model_registry, artifact_registry)
-├── src/
-│   ├── common/
-│   │   ├── config.py       # Tham số thời gian, không gian, đường dẫn
-│   │   ├── storage.py      # Ghi Parquet/JSON/YAML nguyên tử & thực thi SQL DuckDB
-│   │   └── gee.py          # Tiện ích tải raster 1 km từ Earth Engine
-│   ├── ingest/
-│   │   ├── fetch_openaq.py     # Tải metadata trạm + giờ (pm25, pm10, no2, so2, co, co2, o3, temp, RH)
-│   │   ├── fetch_meteo.py      # Tải ERA5-Land hourly + ERA5 BLH từ GEE
-│   │   └── fetch_satellite.py  # Tải Sentinel-5P, MODIS MAIAC AOD, VIIRS từ GEE
-│   ├── pipeline/
-│   │   ├── build_dims.py       # Tạo dim_grid_1km, dim_date, dim_station (kèm cờ is_boundary)
-│   │   ├── build_staging.py    # Tạo stg_openaq_hourly, stg_meteo_daily, stg_satellite_daily, stg_viirs_monthly
-│   │   ├── build_facts.py      # Tạo fct_station_daily, fct_grid_meteo_daily, fct_grid_satellite_daily
-│   │   └── build_marts.py      # Tạo mart_grid_daily_features, mart_station_daily_training
-│   └── models/
-│       ├── train_baselines.py  # Đánh giá 3 phương pháp (Spatial/Random/Temporal) & huấn luyện 2 model cuối cùng
-│       └── registry.py         # Quản lý experiment/model/artifact registry (Local JSON, không cần database)
-├── tests/unit/
-│   ├── test_pipeline.py            # Unit tests kiểm định toàn trình SQL & QC
-│   └── test_temporal_evaluation.py # Unit & integration tests cho 3 phương pháp đánh giá, feature contract & model reload
-├── requirements.txt
-├── pyproject.toml
-└── run.py                  # CLI điều phối duy nhất
+│   ├── evaluation/         # Metrics JSON và parquet kết quả của 3 phương pháp đánh giá
+│   ├── models/             # Model XGBoost JSON đã lưu và metadata của Baseline 1 & 2
+│   └── registry/           # Sổ đăng ký thực nghiệm & metadata model cục bộ (JSON)
+├── scripts/                # Bộ công cụ vận hành: import, verify_reconciliation, backup_restore
+├── src/                    # Mã nguồn cốt lõi: ingest, pipeline, models, api
+├── tests/                  # Bộ kiểm thử tự động pytest (unit & integration tests)
+├── CHANGELOG.md            # 📜 Lịch sử các phiên bản & tính năng (Keep a Changelog)
+├── docker-compose.yml      # Cấu hình cụm 4 dịch vụ Docker
+├── run.ps1 / run.sh        # Script khởi động 1-chạm tự động
+├── requirements.txt        # Danh sách thư viện Python
+├── pyproject.toml          # Cấu hình project, linting (Ruff) và pytest
+└── run.py                  # CLI điều phối duy nhất của dự án
 ```
 
 ---
 
-## 2. Cài đặt & Cấu hình
+## 📚 Hệ Thống Tài Liệu Kèm Theo
 
-```powershell
-python -m pip install -r requirements.txt
-```
+Dự án cung cấp bộ tài liệu được tinh gọn tập trung vào hai trụ cột chính tại [docs/README.md](docs/README.md):
 
-Tạo `.env` khi cần thu thập dữ liệu mới (xem `.env.example`; không commit `.env`):
-
-```ini
-OPENAQ_API_KEY=<api_key_openaq_v3>
-GEE_PROJECT=<google_cloud_project_id_da_bat_earth_engine>
-```
+1. **Tài liệu cốt lõi:**
+   - [docs/business_case.md](docs/business_case.md): Định vị nghiệp vụ, làm rõ khoảng trống không gian 30 vs 3.580 ô lưới, ranh giới khoa học minh bạch và 4 câu hỏi nghiên cứu thực nghiệm.
+   - [docs/schema.md](docs/schema.md): Đặc tả Data Lakehouse, Star Schema (`dim_*`, `fct_*`) và các Data Mart huấn luyện/dự đoán.
+2. **Kho lưu trữ tài liệu kỹ thuật chi tiết ([archive/](archive/README.md)):**
+   - [archive/HANDOVER.md](archive/HANDOVER.md): Đặc tả 6 REST API endpoints và hợp đồng dữ liệu giao diện.
+   - [archive/DEPLOYMENT.md](archive/DEPLOYMENT.md): Sổ tay triển khai Docker Compose chi tiết, đối soát 3 điểm và sao lưu DB.
+   - [archive/BACKEND.md](archive/BACKEND.md): Tài liệu kỹ thuật FastAPI backend, kiến trúc RAM caching và kiểm thử.
+   - [archive/report.md](archive/report.md): Báo cáo Khoa học Dữ liệu 12 phần đầy đủ theo chu trình chuẩn.
+   - [archive/model_report.md](archive/model_report.md): Báo cáo phân tích thực nghiệm chuyên sâu 3 phương pháp kiểm thử chéo.
 
 ---
 
-## 3. Quy trình vận hành (CLI)
+## 🛠️ Công Nghệ Sử Dụng (Tech Stack)
 
-Tất cả thao tác đều chạy qua [`run.py`](run.py):
+<div align="center">
 
-```powershell
-# Bước 1: Sinh lưới chuẩn 1 km (3.610 ô) và trục ngày (01/01/2021 - 30/09/2026 = 2.099 ngày)
-python run.py dims
+| Tầng chức năng | Công nghệ / Thư viện chính |
+| :--- | :--- |
+| **Thu thập & Viễn thám** | `Google Earth Engine (GEE API)`, `OpenAQ v3 REST API`, `Requests` |
+| **Xử lý Không gian & Lakehouse** | `DuckDB`, `GeoPandas`, `PyArrow`, `Shapely`, `PyProj (EPSG:3405 / 4326)` |
+| **Khoa học Dữ liệu & Học máy** | `XGBoost`, `Scikit-Learn`, `NumPy`, `Pandas`, `SciPy` |
+| **Cơ sở dữ liệu Không gian** | `PostgreSQL 16`, `PostGIS 3.4`, `Psycopg 3 (Connection Pool)` |
+| **Backend REST API** | `FastAPI`, `Uvicorn`, `Pydantic v2`, `In-Memory Caching` |
+| **Frontend Dashboard** | `React 18`, `Vite`, `Leaflet (HTML5 Canvas)`, `Tailwind CSS` |
+| **Đóng gói & Vận hành** | `Docker`, `Docker Compose`, `Nginx Reverse Proxy`, `PowerShell`, `Bash` |
+| **Chất lượng Mã nguồn & CI/CD** | `Pytest`, `Ruff (Linter & Formatter)`, `GitHub Actions CI` |
 
-# Bước 2: Thu thập dữ liệu gốc (có cơ chế resume, bỏ qua file đã tải)
-python run.py fetch-openaq                 # Metadata + chuỗi giờ PM2.5, PM10, nhiệt độ, độ ẩm
-python run.py fetch-meteo --workers 4      # ERA5-Land + ERA5 BLH (69 tháng: 2021-01 -> 2026-09)
-python run.py fetch-satellite --workers 4  # S5P (NO2, CO, O3, SO2), MODIS AOD, VIIRS (69 tháng)
+</div>
 
-# Bước 3: Xây dựng lại toàn bộ Dims -> Staging -> Core Facts -> Feature Marts
-python run.py build
+---
 
-# Bước 4: Chạy đánh giá chuẩn hóa theo 3 phương pháp (Spatial GroupKFold, Random KFold, Temporal Split)
-python run.py evaluate
-# Hoặc chạy riêng từng phương pháp:
-python run.py evaluate --method spatial_groupkfold
-python run.py evaluate --method random_kfold
-python run.py evaluate --method temporal_split
+## 👤 Bản Quyền (License)
 
-# Bước 5: Huấn luyện và lưu 2 mô hình cuối cùng (Baseline 1 & Baseline 2) trên 100% dữ liệu hợp lệ
-python run.py train-final
+- **Đề tài:** Xây dựng hệ thống ước tính hồi cứu và trực quan hóa nồng độ bụi mịn $\text{PM}_{2.5}$ lưới 1 km tại Hà Nội (2021–2026).
+- **Phiên bản:** Release v1.0.0
+- **Giấy phép:** Mã nguồn và tài liệu được phát hành theo giấy phép [MIT License](LICENSE).
 
-# Hoặc chạy trọn gói cả đánh giá 3 phương pháp lẫn huấn luyện 2 mô hình cuối cùng:
-python run.py train
+---
 
-# Bước 6: Kiểm tra chất lượng mã nguồn (Ruff) và chạy bộ kiểm thử (Pytest)
-python run.py lint
-python run.py test
-```
+<div align="center">
+<b>HANOI_PM25 Project — Personal Data Science & Engineering Portfolio</b>
+<br>
+<i>Xây dựng với tinh thần Khoa học Dữ liệu Thực chiến, Trung thực và Minh bạch.</i>
+</div>
